@@ -2,6 +2,11 @@
 set WIRESHARK_PATH="C:\Program Files\Wireshark\Wireshark.exe"
 set PLINK_PATH="C:\Program Files\PuTTY\plink.exe"
 
+if "%1" == "/?" goto :usage
+if "%1" == "/h" goto :usage
+if "%1" == "-h" goto :usage
+if "%1" == "--help" goto :usage
+
 if NOT EXIST %WIRESHARK_PATH% (
 	echo Cannot find Wireshark
 	goto :depsFailed
@@ -16,6 +21,12 @@ if "%1" == "" (
 	goto :usage
 ) else (
 	set REMOTE_HOST="%1"
+	REM Try to ping the host to verify capability to connect
+	ping -w 2 -n 1 %REMOTE_HOST% >NUL
+	if NOT "%errorlevel%" == "0" (
+		echo Cannot ping/resolve the remote host
+		goto :exit
+	)
 )
 
 if "%2" == "" (
