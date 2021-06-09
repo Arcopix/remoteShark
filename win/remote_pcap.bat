@@ -46,6 +46,10 @@ goto :exit
 :usage
 
 echo Usage %0 HOST [IFACE] ["BPF FILTER"]
+echo Example %0 172.16.0.1
+echo Example %0 172.16.0.1 eth1
+echo Example %0 172.16.0.1 eth1 "port 80 or 443"
+echo Example %0 172.16.0.1 any "host 192.168.0.3 and port 443"
 goto :exit
 
 :depsFailed
