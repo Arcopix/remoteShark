@@ -10,11 +10,13 @@ if "%1" == "/h" goto :usage
 if "%1" == "-h" goto :usage
 if "%1" == "--help" goto :usage
 
+:: Check for Wireshark bin
 if NOT EXIST %WIRESHARK_PATH% (
 	echo Cannot find Wireshark
 	goto :depsFailed
 )
 
+:: Check for plink bin
 if NOT EXIST %PLINK_PATH% (
 	echo Cannot find plink
 	goto :depsFailed
@@ -45,6 +47,7 @@ if "%~3" == "" (
 	set FILTER=%~3
 )
 
+:: Try to login and generate output of "All good" to check for connection issues
 %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
 
 if NOT "%errorlevel%" == "0" (
@@ -53,6 +56,8 @@ if NOT "%errorlevel%" == "0" (
 
 :run
 
+:: Login and run tcpdump
+:: Redirect STDERR to NULL - otherwize it may corrupt the wireshark input
 %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "tcpdump -U -ni %INTERFACE% -s 0 -q -w - %FILTER% 2>/dev/null" | %WIRESHARK_PATH% -k -i -
 
 goto :exit
