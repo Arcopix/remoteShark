@@ -27,7 +27,7 @@ if "%1" == "" (
 )
 
 :: Try to ping the host to verify capability to connect
-ping -w 2 -n 1 %REMOTE_HOST%
+ping -w 2 -n 1 %REMOTE_HOST% >NUL 2>&1
 if NOT "%errorlevel%" == "0" (
 	echo Cannot ping/resolve the remote host
 	goto :exit
@@ -45,14 +45,13 @@ if "%~3" == "" (
 	set FILTER=%~3
 )
 
-%PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" | findstr "All good"
+%PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
 
 if NOT "%errorlevel%" == "0" (
-	echo "This script will automatically add the host key to the cache."
-	echo "Press Ctrl+C to interrupt that"
-	pause
-	%PLINK_PATH% -ssh root@%REMOTE_HOST% "echo 'Host key added'"
+	goto :addHostKey
 )
+
+:run
 
 %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "tcpdump -U -ni %INTERFACE% -s 0 -q -w - %FILTER% 2>/dev/null" | %WIRESHARK_PATH% -k -i -
 
@@ -74,6 +73,21 @@ echo Current paths:
 echo WIRESHARK_PATH =^> %WIRESHARK_PATH%
 echo PLINK_PATH     =^> %PLINK_PATH%
 goto :exit
+
+:addHostKey
+
+echo This script will automatically add the host key to the cache.
+echo Press Ctrl+C to interrupt that
+timeout /t 5 >NUL
+
+echo y | %PLINK_PATH% -ssh root@%REMOTE_HOST% "echo 'Host key added'" 2>NUL | findstr "Host key added"
+
+if NOT "%errorlevel%" == "0" (
+	echo Connection failed
+	goto :exit
+)
+
+goto :run
 
 :exit
 
