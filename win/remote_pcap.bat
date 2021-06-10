@@ -64,7 +64,6 @@ echo Example %0 172.16.0.1 any "host 192.168.0.3 and port 443"
 goto :exit
 
 :depsFailed
-@echo off
 
 echo This script requires Wireshark and plink (part of PuTTy package)
 echo Current paths: 
