@@ -1,6 +1,6 @@
 @echo off
-set WIRESHARK_PATH="C:\Program Files\Wireshark\Wireshark.exe"
-set PLINK_PATH="C:\Program Files\PuTTY\plink.exe"
+set WIRESHARK_PATH="%ProgramFiles%\Wireshark\Wireshark.exe"
+set PLINK_PATH="%ProgramFiles%\PuTTY\plink.exe"
 
 if "%1" == "/?" goto :usage
 if "%1" == "/h" goto :usage
