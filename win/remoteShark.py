@@ -11,9 +11,6 @@ import platform
 
 from devhex.common import *
 
-#n = int(len(sys.argv))
-#print(n+1)
-
 WIRESHARK_PATH="\\Wireshark\\Wireshark.exe"
 PLINK_PATH="\\PuTTY\\plink.exe"
 
@@ -112,7 +109,7 @@ class RemoteShark:
         global cfg
 
         self.platform = platform.system()
-
+        
         if cfg.debug >= 2:
             printf("Detected platform '%s'\n", self.platform)
 
@@ -129,22 +126,27 @@ class RemoteShark:
 
         WIRESHARK_FOUND = False
         PLINK_FOUND = False
+        
+        if self.platform == 'Winodws':
+            if os.path.exists(os.environ["ProgramFiles"] + WIRESHARK_PATH):
+                cfg.wiresharkPath = os.environ["ProgramFiles"] + WIRESHARK_PATH
+                WIRESHARK_FOUND = True
+    
+            if os.path.exists(os.environ["ProgramFiles(x86)"] + WIRESHARK_PATH):
+                cfg.wiresharkPath = os.environ["ProgramFiles(x86)"] + WIRESHARK_PATH
+                WIRESHARK_FOUND = True
+    
+            if os.path.exists(os.environ["ProgramFiles"] + PLINK_PATH):
+                cfg.plinkPath = os.environ["ProgramFiles"] + PLINK_PATH
+                PLINK_FOUND = True
+    
+            if os.path.exists(os.environ["ProgramFiles(x86)"] + PLINK_PATH):
+                cfg.plinkPath = os.environ["ProgramFiles(x86)"] + PLINK_PATH
+                PLINK_FOUND = True
 
-        if os.path.exists(os.environ["ProgramFiles"] + WIRESHARK_PATH):
-            cfg.wiresharkPath = os.environ["ProgramFiles"] + WIRESHARK_PATH
-            WIRESHARK_FOUND = True
-
-        if os.path.exists(os.environ["ProgramFiles(x86)"] + WIRESHARK_PATH):
-            cfg.wiresharkPath = os.environ["ProgramFiles(x86)"] + WIRESHARK_PATH
-            WIRESHARK_FOUND = True
-
-        if os.path.exists(os.environ["ProgramFiles"] + PLINK_PATH):
-            cfg.plinkPath = os.environ["ProgramFiles"] + PLINK_PATH
-            PLINK_FOUND = True
-
-        if os.path.exists(os.environ["ProgramFiles(x86)"] + PLINK_PATH):
-            cfg.plinkPath = os.environ["ProgramFiles(x86)"] + PLINK_PATH
-            PLINK_FOUND = True
+        if self.platform == 'Linux':
+            printf("Not (yet) supported!\n")
+            sys.exit(1)
 
         return WIRESHARK_FOUND and PLINK_FOUND
 
