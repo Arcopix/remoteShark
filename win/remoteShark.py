@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Test python script
 
 import sys
