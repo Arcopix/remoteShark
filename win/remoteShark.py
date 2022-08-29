@@ -205,6 +205,7 @@ if __name__ == '__main__':
 
     if not app.detectRequirement():
         printf("Cannot detect Wireshark or plink\n")
+        sys.exit(1)
 
     if cfg.debug >= 3:
         printf("Current config:\n%s\n", cfg)
