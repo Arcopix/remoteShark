@@ -131,7 +131,7 @@ class RemoteShark:
         WIRESHARK_FOUND = False
         PLINK_FOUND = False
         
-        if self.platform == 'Winodws':
+        if self.platform == 'Windows':
             if os.path.exists(os.environ["ProgramFiles"] + WIRESHARK_PATH):
                 cfg.wiresharkPath = os.environ["ProgramFiles"] + WIRESHARK_PATH
                 WIRESHARK_FOUND = True
