@@ -9,7 +9,11 @@ import inspect
 import subprocess
 import platform
 
-from devhex.common import *
+try:
+    from devhex.common import *
+except:
+    from local import sprintf
+    from local import printf
 
 WIRESHARK_PATH="\\Wireshark\\Wireshark.exe"
 PLINK_PATH="\\PuTTY\\plink.exe"
