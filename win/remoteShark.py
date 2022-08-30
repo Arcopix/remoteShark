@@ -204,9 +204,6 @@ class RemoteShark:
                 cfg.plinkPath = 'ssh'
                 PLINK_FOUND = True
             
-            printf("Not (yet) supported!\n")
-            sys.exit(1)
-
         return WIRESHARK_FOUND and PLINK_FOUND
 
     def listInterfaces(self):
@@ -219,10 +216,13 @@ tcpdump --list-interfaces | sed 's/^[0-9]\+\.//' | sort |
 sed 's/(.*)//g;s/\[//g;s/\\]//g;s/ [ ]\+/ /g' | sed "s/^\([^ ]\+\) \(.*\)$/'\\1' '\\2'/" |
 xargs printf "%10s | %24s\\n"
 """
-        process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if self.platform == 'Windows':
+            process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            process = subprocess.Popen([cfg.plinkPath, login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
         out, err = process.communicate()
         print(out.decode())
-        print(err.decode())
 
     def runWireshark(self):
         global cfg
