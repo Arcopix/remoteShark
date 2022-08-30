@@ -240,22 +240,34 @@ xargs printf "%10s | %24s\\n"
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
 
         tcpdumpCMD = sprintf('%s -U -ni eth0 -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.dumpFilter)
+	
         if self.platform == 'Windows':
             process = subprocess.Popen([
                 cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD, '|',
                 cfg.wiresharkPath, '-k', '-i', '-'],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+            if cfg.runTimeout != None and cfg.runTimeout > 0:
+                process.wait(cfg.runTimeout)
+            
+            out, err = process.communicate()
+            print(out.decode())
+            print(err.decode())
         else:
-            process = subprocess.Popen([
-                cfg.plinkPath, login, tcpdumpCMD, '|',
-                cfg.wiresharkPath, '-k', '-i', '-'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
-        if cfg.runTimeout != None and cfg.runTimeout > 0:
-            process.wait(cfg.runTimeout)
-        out, err = process.communicate()
-        #print(out.decode())
-        #print(err.decode())
+            sshProcess = subprocess.Popen([cfg.plinkPath, login, tcpdumpCMD], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+            wireProcess = subprocess.Popen([cfg.wiresharkPath, '-k', '-i', '-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=sshProcess.stdout)
+            if cfg.runTimeout != None and cfg.runTimeout > 0:
+                try:
+                    wireProcess.wait(cfg.runTimeout)
+                except subprocess.TimeoutExpired:
+                    # Leave wireshark process running
+                    if self.cfg.debug >= 1:
+                        printf("Reached timeout\n")
+                    sys.exit(0)
+                except:
+                    printf("Unknown issue\n")
+                    sys.exit(1)
+            else:
+                out, err = wireProcess.communicate()
 
 if __name__ == '__main__':
     # Initialize configuration
