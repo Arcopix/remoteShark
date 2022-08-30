@@ -239,7 +239,7 @@ xargs printf "%10s | %24s\\n"
         if cfg.packetCount != None and cfg.packetCount > 0:
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
 
-        tcpdumpCMD = sprintf('%s -U -ni eth0 -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.dumpFilter)
+        tcpdumpCMD = sprintf('%s -U -ni any -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
