@@ -241,6 +241,8 @@ xargs printf "%10s | %24s\\n"
 
         tcpdumpCMD = sprintf('%s -U -ni eth0 -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.dumpFilter)
 	
+        if self.cfg.debug >= 3:
+            printf('Running command remote "%s"\n', tcpdumpCMD)
         if self.platform == 'Windows':
             process = subprocess.Popen([
                 cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD, '|',
