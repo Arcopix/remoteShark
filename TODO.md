@@ -5,8 +5,9 @@
 3. Detection of *HOST* between *FQDN* and *IP* address
 4. Check if the remote host key is in _known_hosts_ 
 5. Fully test and bugfix?
-6. Detached Wireshark in Linux?
+6. Detached Wireshark in Linux _(?)_
 7. Work with remote pcap files
+8. Split remoteShark.py into a library and have basic scripts which execute the behavior _(?)_
 
 ## DONE
 
