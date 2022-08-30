@@ -218,7 +218,7 @@ xargs printf "%10s | %24s\\n"
 """
         if self.platform == 'Windows':
             process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        else:
+        else: # Linux or Mac (Darwin)
             process = subprocess.Popen([cfg.plinkPath, login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         out, err = process.communicate()
@@ -238,26 +238,37 @@ xargs printf "%10s | %24s\\n"
 
         if cfg.packetCount != None and cfg.packetCount > 0:
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
-
+        # It is important to suppress STDERR, otherwise the data from tcpdump STDERR will break Wireshark
         tcpdumpCMD = sprintf('%s -U -ni any -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
 
+        # Wireshark is run with the same arguments for all OS
+        wireCmd = [cfg.wiresharkPath, '-k', '-i', '-']
+
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
+            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD]
 
-            plinkProcess = subprocess.Popen([
-                cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD],
+            if self.cfg.debug >= 3:
+                printf('Running connection process "%s"\n', plinkCmd)
+                printf('Running Wireshark process "%s"\n', wireCmd)
+            
+            plinkProcess = subprocess.Popen(plinkCmd,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            wireProcess = subprocess.Popen([
-                cfg.wiresharkPath, '-k', '-i', '-'],
+            wireProcess = subprocess.Popen(wireCmd,
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=plinkProcess.stdout,
                 creationflags=DETACHED_PROCESS)
+        else: # Linux or Mac (Darwin)
+            sshCmd = [cfg.plinkPath, login, tcpdumpCMD]
 
-        else:
-            sshProcess = subprocess.Popen([cfg.plinkPath, login, tcpdumpCMD], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
-            wireProcess = subprocess.Popen([cfg.wiresharkPath, '-k', '-i', '-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=sshProcess.stdout)
+            if self.cfg.debug >= 3:
+                printf('Running connection process "%s"\n', plinkCmd)
+                printf('Running Wireshark process "%s"\n', wireCmd)
+
+            sshProcess = subprocess.Popen(sshCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+            wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=sshProcess.stdout)
 
         # Run processes
         if cfg.runTimeout != None and cfg.runTimeout > 0:
