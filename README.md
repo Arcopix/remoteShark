@@ -3,17 +3,11 @@ A set of utilities allowing the user to capture traffic in real-time from remote
 
 ## Versions
 
-**Python**
-
-Full implementation of the utility in Python 3 with multi OS support.
-
-**Windows**
-
-Initial/proof of concept version implemented in a simple BAT file
-
-**Linux**
-
-Initial/proof of concept version implemented in a simple BASH file
+* Python - Full implementation of the utility in Python 3 with multi OS support.
+* Window - Initial/proof of concept version implemented in a simple BAT file.
+** *Version is obsolete*
+* Linux - Initial/proof of concept version implemented in a simple BASH file
+** **Version is obsolete.**
 
 ## TODO
 
