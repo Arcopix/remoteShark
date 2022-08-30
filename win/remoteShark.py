@@ -243,14 +243,17 @@ xargs printf "%10s | %24s\\n"
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
-# Note DETACHED_PROCESS = 0x00000008 / creationflags=DETACHED_PROCESS
+
         if self.platform == 'Windows':
+            DETACHED_PROCESS = 0x00000008
+
             plinkProcess = subprocess.Popen([
                 cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             wireProcess = subprocess.Popen([
                 cfg.wiresharkPath, '-k', '-i', '-'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=plinkProcess.stdout)
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=plinkProcess.stdout,
+                creationflags=DETACHED_PROCESS)
 
         else:
             sshProcess = subprocess.Popen([cfg.plinkPath, login, tcpdumpCMD], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
