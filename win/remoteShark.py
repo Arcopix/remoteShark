@@ -245,32 +245,31 @@ xargs printf "%10s | %24s\\n"
             printf('Running command remote "%s"\n', tcpdumpCMD)
 # Note DETACHED_PROCESS = 0x00000008 / creationflags=DETACHED_PROCESS
         if self.platform == 'Windows':
-            process = subprocess.Popen([
-                cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD, '|',
+            plinkProcess = subprocess.Popen([
+                cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            wireProcess = subprocess.Popen([
                 cfg.wiresharkPath, '-k', '-i', '-'],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-            if cfg.runTimeout != None and cfg.runTimeout > 0:
-                process.wait(cfg.runTimeout)
-            
-            out, err = process.communicate()
-            print(out.decode())
-            print(err.decode())
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=plinkProcess.stdout)
+
         else:
             sshProcess = subprocess.Popen([cfg.plinkPath, login, tcpdumpCMD], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
             wireProcess = subprocess.Popen([cfg.wiresharkPath, '-k', '-i', '-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=sshProcess.stdout)
-            if cfg.runTimeout != None and cfg.runTimeout > 0:
-                try:
-                    wireProcess.wait(cfg.runTimeout)
-                except subprocess.TimeoutExpired:
-                    # Leave wireshark process running
-                    if self.cfg.debug >= 1:
-                        printf("Reached timeout\n")
-                    sys.exit(0)
-                except:
-                    printf("Unknown issue\n")
-                    sys.exit(1)
-            else:
-                out, err = wireProcess.communicate()
+
+        # Run processes
+        if cfg.runTimeout != None and cfg.runTimeout > 0:
+            try:
+                wireProcess.wait(cfg.runTimeout)
+            except subprocess.TimeoutExpired:
+                # Leave wireshark process running
+                if self.cfg.debug >= 1:
+                    printf("Reached timeout\n")
+                sys.exit(0)
+            except:
+                printf("Unknown issue\n")
+                sys.exit(1)
+        else:
+            out, err = wireProcess.communicate()
 
 if __name__ == '__main__':
     # Initialize configuration
