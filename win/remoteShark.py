@@ -87,6 +87,14 @@ class AppConfig:
                     self.sshUser = argv[i + 1]
                     i = i + 2
                     continue
+            if argv[i] == '--filter' or argv[i] == '-f':
+                if argc <= i + 1:
+                    printf("%s requires an argument\n", argv[i])
+                    sys.exit(1)
+                else:
+                    self.dumpFilter = argv[i + 1]
+                    i = i + 2
+                    continue
 
             # Consume the first non-recognized argument as the host
             if self.sshHost == None:
@@ -126,6 +134,7 @@ class RemoteShark:
  -t  --timeout           TBA
  -u  --user              TBA
  -t  --timeout           TBA
+ -f  --filter            TBA
     """
         printf("%s\n", helpData)
 
