@@ -17,4 +17,4 @@ Initial/proof of concept version implemented in a simple BASH file
 
 ## TODO
 
-{{./TODO.md}}
+Current TODO/DONE list is available in [TODO](TODO.md)
