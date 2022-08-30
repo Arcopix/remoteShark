@@ -119,7 +119,13 @@ class RemoteShark:
 
     def printHelp(self):
         helpData = """Usage: remoteShark.py [OPTIONS] host
- -d  --debug       Enables debug mode
+ -d  --debug             Enables debug mode
+ -h  --help              TBA
+     --list-interfaces   TBA
+ -c  --count             TBA
+ -t  --timeout           TBA
+ -u  --user              TBA
+ -t  --timeout           TBA
     """
         printf("%s\n", helpData)
 
