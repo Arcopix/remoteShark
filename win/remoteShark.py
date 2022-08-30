@@ -243,6 +243,7 @@ xargs printf "%10s | %24s\\n"
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
+# Note DETACHED_PROCESS = 0x00000008 / creationflags=DETACHED_PROCESS
         if self.platform == 'Windows':
             process = subprocess.Popen([
                 cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD, '|',
