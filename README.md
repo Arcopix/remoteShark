@@ -12,3 +12,7 @@ A set of utilities allowing the user to capture traffic in real-time from remote
 ## TODO
 
 Current TODO/DONE list is available in [TODO](TODO.md)
+
+## CHANGELOG
+
+The CHANGELOG is available [here](CHANGELOG.md)
