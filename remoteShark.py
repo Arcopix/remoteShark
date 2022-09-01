@@ -21,6 +21,8 @@ except:
 WIN_WIRESHARK_PATH="\\Wireshark\\Wireshark.exe"
 WIN_PLINK_PATH="\\PuTTY\\plink.exe"
 
+MAC_WIRESHARK_PATH="/Applications/Wireshark.app/Contents/MacOS/Wireshark"
+
 class AppConfig:
     # Path of binaries
     wiresharkPath = None
@@ -169,25 +171,6 @@ class RemoteShark:
                 PLINK_FOUND = True
 
         if self.platform == 'Linux' or self.platform == 'Darwin':
-            # Check for Wireshark support
-            try:
-                process = subprocess.Popen([ "wireshark", "-v" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                out, err = process.communicate()
-            except:
-                if self.cfg.debug > 1:
-                    printf("Unable to detect wireshark\n")
-                return False
-
-            if process.returncode != 0:
-                if self.cfg.debug > 1:
-                    printf("Unable to detect wireshark\n")
-                WIRESHARK_FOUND = False
-            else:
-                if self.cfg.debug > 2:
-                    printf("Detected Wireshark version %s%s\n", out.decode().split("\n")[0], err.decode().split("\n")[0])
-                cfg.wiresharkPath = 'wireshark'
-                WIRESHARK_FOUND = True
-            
             # Check for SSH support
             try:
                 process = subprocess.Popen([ "ssh", "-V" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -206,6 +189,46 @@ class RemoteShark:
                     printf("Detected SSH version %s%s\n", out.decode(), err.decode())
                 cfg.plinkPath = 'ssh'
                 PLINK_FOUND = True
+
+        if self.platform == 'Linux':
+            # Check for Wireshark support
+            try:
+                process = subprocess.Popen([ "wireshark", "-v" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = process.communicate()
+            except:
+                if self.cfg.debug > 1:
+                    printf("Unable to detect wireshark\n")
+                return False
+
+            if process.returncode != 0:
+                if self.cfg.debug > 1:
+                    printf("Unable to detect wireshark\n")
+                WIRESHARK_FOUND = False
+            else:
+                if self.cfg.debug > 2:
+                    printf("Detected Wireshark version %s%s\n", out.decode().split("\n")[0], err.decode().split("\n")[0])
+                cfg.wiresharkPath = 'wireshark'
+                WIRESHARK_FOUND = True
+        
+        if self.platform == 'Darwin':
+            # Check for Wireshark support
+            try:
+                process = subprocess.Popen([ MAC_WIRESHARK_PATH, '-v', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                out, err = process.communicate()
+            except:
+                if self.cfg.debug > 1:
+                    printf("Unable to detect wireshark\n")
+                return False
+
+            if process.returncode != 0:
+                if self.cfg.debug > 1:
+                    printf("Unable to detect wireshark\n")
+                WIRESHARK_FOUND = False
+            else:
+                if self.cfg.debug > 2:
+                    printf("Detected Wireshark version %s%s\n", out.decode().split("\n")[0], err.decode().split("\n")[0])
+                cfg.wiresharkPath = MAC_WIRESHARK_PATH
+                WIRESHARK_FOUND = True
             
         return WIRESHARK_FOUND and PLINK_FOUND
 
