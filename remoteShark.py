@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Test python script
+# remoteShark utility, Python version
 
 import sys
 import os
@@ -9,14 +9,17 @@ import inspect
 import subprocess
 import platform
 
+# Use Devhex' Python common for printf/sprintf
 try:
     from devhex.common import *
 except:
+    # Fallback to local definitions if not available
     from local import sprintf
     from local import printf
 
-WIRESHARK_PATH="\\Wireshark\\Wireshark.exe"
-PLINK_PATH="\\PuTTY\\plink.exe"
+# Default locations for Windows
+WIN_WIRESHARK_PATH="\\Wireshark\\Wireshark.exe"
+WIN_PLINK_PATH="\\PuTTY\\plink.exe"
 
 class AppConfig:
     # Path of binaries
@@ -141,28 +144,28 @@ class RemoteShark:
         printf("%s\n", helpData)
 
     def detectRequirement(self):
-        global WIRESHARK_PATH
-        global PLINK_PATH
+        global WIN_WIRESHARK_PATH
+        global WIN_PLINK_PATH
         global cfg
 
         WIRESHARK_FOUND = False
         PLINK_FOUND = False
         
         if self.platform == 'Windows':
-            if os.path.exists(os.environ["ProgramFiles"] + WIRESHARK_PATH):
-                cfg.wiresharkPath = os.environ["ProgramFiles"] + WIRESHARK_PATH
+            if os.path.exists(os.environ["ProgramFiles"] + WIN_WIRESHARK_PATH):
+                cfg.wiresharkPath = os.environ["ProgramFiles"] + WIN_WIRESHARK_PATH
                 WIRESHARK_FOUND = True
     
-            if os.path.exists(os.environ["ProgramFiles(x86)"] + WIRESHARK_PATH):
-                cfg.wiresharkPath = os.environ["ProgramFiles(x86)"] + WIRESHARK_PATH
+            if os.path.exists(os.environ["ProgramFiles(x86)"] + WIN_WIRESHARK_PATH):
+                cfg.wiresharkPath = os.environ["ProgramFiles(x86)"] + WIN_WIRESHARK_PATH
                 WIRESHARK_FOUND = True
     
-            if os.path.exists(os.environ["ProgramFiles"] + PLINK_PATH):
-                cfg.plinkPath = os.environ["ProgramFiles"] + PLINK_PATH
+            if os.path.exists(os.environ["ProgramFiles"] + WIN_PLINK_PATH):
+                cfg.plinkPath = os.environ["ProgramFiles"] + WIN_PLINK_PATH
                 PLINK_FOUND = True
     
-            if os.path.exists(os.environ["ProgramFiles(x86)"] + PLINK_PATH):
-                cfg.plinkPath = os.environ["ProgramFiles(x86)"] + PLINK_PATH
+            if os.path.exists(os.environ["ProgramFiles(x86)"] + WIN_PLINK_PATH):
+                cfg.plinkPath = os.environ["ProgramFiles(x86)"] + WIN_PLINK_PATH
                 PLINK_FOUND = True
 
         if self.platform == 'Linux' or self.platform == 'Darwin':
