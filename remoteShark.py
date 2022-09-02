@@ -131,7 +131,8 @@ class RemoteShark:
         
         if cfg.debug >= 2:
             printf("Detected platform '%s'\n", self.platform)
-
+    
+    """ Print usage information for the utility """
     def printHelp(self):
         helpData = """Usage: remoteShark.py [OPTIONS] host
  -d  --debug             Enables debug mode
@@ -144,7 +145,8 @@ class RemoteShark:
  -f  --filter            TBA
     """
         printf("%s\n", helpData)
-
+    
+    """ Detect plink/ssh and wireshark availability and capabilities """
     def detectRequirement(self):
         global WIN_WIRESHARK_PATH
         global WIN_PLINK_PATH
@@ -216,7 +218,8 @@ class RemoteShark:
         
             
         return WIRESHARK_FOUND and PLINK_FOUND
-
+    
+    """ Connect to remote host and list available interfaces on the remote system """
     def listInterfaces(self):
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
@@ -234,7 +237,8 @@ xargs printf "%10s | %24s\\n"
 
         out, err = process.communicate()
         print(out.decode())
-
+    
+    """ Proof of concept/development method for fetching remote packet capture instead of live capturing of traffic """
     def remotePCAP(self):
         # No implementation at the moment
         """ Some notes
@@ -247,7 +251,8 @@ For Windows:
 For Linux: (an idea)
     linkCmd = ["scp USER@REMOTE:/tmp/p.pcap /tmp/XXX ; wireshak /tmp/xxx"]
         """
-
+    
+    """ Connect to the remote host and start local Wireshark for live capturing of traffic """
     def runWireshark(self):
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
