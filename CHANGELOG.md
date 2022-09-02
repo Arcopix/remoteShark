@@ -2,7 +2,7 @@
 
 ## Alpha 2
 
-* Fixed issues with MacOS/Darwin
+* Fixed  issues with detection of Wireshark with MacOS/Darwin
 
 ## Alpha 1
 
