@@ -30,6 +30,7 @@ class AppConfig:
     packetCount = None
     runTimeout = None
     listInterfaces = False
+    interface = 'any'
     sshUser = 'root'
     sshHost = None
     dumpFilter = 'not port 22'
@@ -100,6 +101,14 @@ class AppConfig:
                     self.dumpFilter = argv[i + 1]
                     i = i + 2
                     continue
+            if argv[i] == '--interface' or argv[i] == '-i':
+                if argc <= i + 1:
+                    printf("%s requires an argument\n", argv[i])
+                    sys.exit(1)
+                else:
+                    self.interface = argv[i + 1]
+                    i = i + 2
+                    continue
 
             # Consume the first non-recognized argument as the host
             if self.sshHost == None:
@@ -143,6 +152,7 @@ class RemoteShark:
  -u  --user              TBA
  -t  --timeout           TBA
  -f  --filter            TBA
+ -i  --interface         TBA
     """
         printf("%s\n", helpData)
     
@@ -268,7 +278,7 @@ For Linux: (an idea)
         if cfg.packetCount != None and cfg.packetCount > 0:
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
         # It is important to suppress STDERR, otherwise the data from tcpdump STDERR will break Wireshark
-        tcpdumpCMD = sprintf('%s -U -ni any -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.dumpFilter)
+        tcpdumpCMD = sprintf('%s -U -ni %s -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
