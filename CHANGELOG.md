@@ -4,6 +4,7 @@
 
 * Fixed  issues with detection of Wireshark with MacOS/Darwin
 * Implemented interface (-i|--interface) argument
+* Actual help message (-h|--help) was added
 
 ## Alpha 1
 
