@@ -144,15 +144,18 @@ class RemoteShark:
     """ Print usage information for the utility """
     def printHelp(self):
         helpData = """Usage: remoteShark.py [OPTIONS] host
+ -c  --count             Stop capture after receiving count packets
  -d  --debug             Enables debug mode
- -h  --help              TBA
-     --list-interfaces   TBA
- -c  --count             TBA
- -t  --timeout           TBA
- -u  --user              TBA
- -t  --timeout           TBA
- -f  --filter            TBA
- -i  --interface         TBA
+ -f  --filter            Filters which packets will be captured. For filter
+                         syntax see pcap-filter(7) man page on a Linux system.
+                         Default filter is "not port 22".
+ -h  --help              Prints the current help message
+     --list-interfaces   Connects to the remote host and lists interfaces
+                         available for capturing traffic
+ -i  --interface         Remote interface to listen on (default any)
+ -t  --timeout           Stop capture after timeout has expired
+ -u  --user              SSH user to connect as (default root)
+
     """
         printf("%s\n", helpData)
     
