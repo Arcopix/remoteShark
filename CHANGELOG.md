@@ -3,6 +3,7 @@
 ## Alpha 2
 
 * Fixed  issues with detection of Wireshark with MacOS/Darwin
+* Implemented interface (-i|--interface) argument
 
 ## Alpha 1
 
