@@ -2,6 +2,8 @@
 
 ## Alpha 3
 
+* Implemented a check if the remote host key is in _known_hosts_
+
 
 ## Alpha 2
 
