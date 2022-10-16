@@ -9,6 +9,20 @@ A set of utilities allowing the user to capture traffic in real-time from remote
 * Linux - Initial/proof of concept version implemented in a simple BASH file
   * **Version is obsolete.**
 
+## HOWTO
+
+Listing interfaces on remote system `10.20.30.40`:
+> `remoteShark.py 10.20.30.40 --list-interfaces`
+
+Capture HTTP traffic (`port 80`) on interface `eth0` on remote system `10.20.30.40`:
+> `remoteShark.py 10.20.30.40 -f "port 80" -i eth0`
+
+Capture SIP traffic (`port 5060 or 5061) for 100 packets on any interface on remote system `10.20.30.40`:
+> `remoteShark.py 10.20.30.40 -f "port 5060 or 5061" -c 100`
+
+Capture SMTP traffic (`port 25) for 5 minutes (300 seconds) on eth0.44 interface on remote system `10.20.30.40`:
+> `remoteShark.py 10.20.30.40 -f "port 25" -t 300 -i eth0.44`
+
 ## TODO
 
 Current TODO/DONE list is available in [TODO](TODO.md)
