@@ -6,6 +6,7 @@ import os
 import os.path
 import re
 import inspect
+import time
 import subprocess
 import platform
 
@@ -244,6 +245,7 @@ sed 's/(.*)//g;s/\[//g;s/\\]//g;s/ [ ]\+/ /g' | sed "s/^\([^ ]\+\) \(.*\)$/'\\1'
 xargs printf "%10s | %24s\\n"
 """
         if self.platform == 'Windows':
+            self.testConnection()
             process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else: # Linux or Mac (Darwin)
             process = subprocess.Popen([cfg.plinkPath, login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -264,7 +266,60 @@ For Windows:
 For Linux: (an idea)
     linkCmd = ["scp USER@REMOTE:/tmp/p.pcap /tmp/XXX ; wireshak /tmp/xxx"]
         """
-    
+
+    """ Tests connection to the remote host (for Windows) and adds the remote host SSH key if needed """
+    def testConnection(self):
+        # :: Try to login and generate output of "All good" to check for connection issues
+        # %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
+        global cfg
+        login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
+        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+
+        if self.cfg.debug >= 3:
+            printf('Running connection process "%s"\n', plinkCmd)
+
+        plinkProcess = subprocess.Popen(plinkCmd,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        out, err = plinkProcess.communicate()
+
+        if (re.search("remoteShark::connectionTest::good", out.decode())):
+            if self.cfg.debug >= 2:
+                printf('Successful connection to the remote host')
+            return
+
+        if (re.search("The server's host key is not cached", err.decode())):
+            printf("%s\n", err.decode())
+            printf("\n\nThis utility will automatically add the host key in 5 seconds.\n")
+            printf("Press Ctrl+C to abort... \n")
+            time.sleep(5)
+
+            plinkCmd = [cfg.plinkPath, '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+            plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+            if self.cfg.debug >= 3:
+                printf('Running connection process "%s"\n', plinkCmd)
+
+            plinkProcess.stdin.write('y'.encode())
+            plinkProcess.stdin.flush()
+            out, err = plinkProcess.communicate()
+
+            printf("%s\n", out.decode())
+            printf("%s\n", err.decode())
+            #echo y | %PLINK_PATH% -ssh root@%REMOTE_HOST% "echo 'Host key added'" 2>NUL
+
+            #if NOT "%errorlevel%" == "0" (
+            #	echo Connection failed
+            #	goto :exit
+            #)
+        else:
+            printf("Big Ooof\n")
+            printf("%s\n", out.decode())
+            printf("%s\n", err.decode())
+            sys.exit(1)
+
+        return
+
     """ Connect to the remote host and start local Wireshark for live capturing of traffic """
     def runWireshark(self):
         global cfg
@@ -292,6 +347,8 @@ For Linux: (an idea)
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
             plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD]
+
+            self.testConnection()
 
             if self.cfg.debug >= 3:
                 printf('Running connection process "%s"\n', plinkCmd)
