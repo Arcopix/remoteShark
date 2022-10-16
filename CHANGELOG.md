@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Alpha 3
+
+
 ## Alpha 2
 
 * Fixed  issues with detection of Wireshark with MacOS/Darwin
