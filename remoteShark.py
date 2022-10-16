@@ -293,25 +293,13 @@ For Linux: (an idea)
             printf("\n\nThis utility will automatically add the host key in 5 seconds.\n")
             printf("Press Ctrl+C to abort... \n")
             time.sleep(5)
-
-            plinkCmd = [cfg.plinkPath, '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
-            plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-
-            if self.cfg.debug >= 3:
-                printf('Running connection process "%s"\n', plinkCmd)
-
-            plinkProcess.stdin.write('y'.encode())
-            plinkProcess.stdin.flush()
-            out, err = plinkProcess.communicate()
-
-            printf("%s\n", out.decode())
-            printf("%s\n", err.decode())
-            #echo y | %PLINK_PATH% -ssh root@%REMOTE_HOST% "echo 'Host key added'" 2>NUL
-
-            #if NOT "%errorlevel%" == "0" (
-            #	echo Connection failed
-            #	goto :exit
-            #)
+            if (self.addHostKeyCache()):
+                return
+            else:
+                printf("Small Ooof\n")
+                printf("%s\n", out.decode())
+                printf("%s\n", err.decode())
+                sys.exit(1)
         else:
             printf("Big Ooof\n")
             printf("%s\n", out.decode())
@@ -319,6 +307,28 @@ For Linux: (an idea)
             sys.exit(1)
 
         return
+
+    def addHostKeyCache(self):
+        global cfg
+        login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
+
+        plinkCmd = [cfg.plinkPath, '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+        plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+        if self.cfg.debug >= 3:
+            printf('Running connection process "%s"\n', plinkCmd)
+
+        plinkProcess.stdin.write('y'.encode())
+        plinkProcess.stdin.flush()
+        out, err = plinkProcess.communicate()
+
+        printf("%s\n", out.decode())
+        printf("%s\n", err.decode())
+
+        if (re.search("remoteShark::connectionTest::good", out.decode())):
+            return True
+        else:
+            return False
 
     """ Connect to the remote host and start local Wireshark for live capturing of traffic """
     def runWireshark(self):
