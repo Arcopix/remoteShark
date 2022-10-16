@@ -14,6 +14,12 @@ A set of utilities allowing the user to capture traffic in real-time from remote
 Listing interfaces on remote system `10.20.30.40`:
 > `remoteShark.py 10.20.30.40 --list-interfaces`
 
+Capture any traffic on remote system `10.20.30.40`:
+> `remoteShark.py 10.20.30.40`
+
+Capture any traffic coming from host `10.10.10.10` on remote system `10.20.30.40`:
+> `remoteShark.py 10.20.30.40 -f "host 10.10.10.10"`
+
 Capture HTTP traffic (`port 80`) on interface `eth0` on remote system `10.20.30.40`:
 > `remoteShark.py 10.20.30.40 -f "port 80" -i eth0`
 
