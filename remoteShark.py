@@ -301,12 +301,12 @@ For Linux: (an idea)
             if (self.addHostKeyCache()):
                 return
             else:
-                printf("Small Ooof\n")
+                printf("Error occurred while attempting to add the host key\n")
                 printf("%s\n", out.decode())
                 printf("%s\n", err.decode())
                 sys.exit(1)
         else:
-            printf("Big Ooof\n")
+            printf("Error while testing connection to %s\n", cfg.sshHost)
             printf("%s\n", out.decode())
             printf("%s\n", err.decode())
             sys.exit(1)
