@@ -292,7 +292,12 @@ For Linux: (an idea)
             printf("%s\n", err.decode())
             printf("\n\nThis utility will automatically add the host key in 5 seconds.\n")
             printf("Press Ctrl+C to abort... \n")
-            time.sleep(5)
+            try:
+                time.sleep(5)
+            except(KeyboardInterrupt):
+                printf("ABORTED\n")
+                sys.exit(0)
+
             if (self.addHostKeyCache()):
                 return
             else:
