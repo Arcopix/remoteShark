@@ -3,7 +3,8 @@
 ## Alpha 3
 
 * Implemented a check if the remote host key is in _known_hosts_
-
+* Brackets in packet capture are now automatically escaped
+* PCAP filter is now softly validated for potentially dangerous characters
 
 ## Alpha 2
 

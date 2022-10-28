@@ -110,6 +110,7 @@ class AppConfig:
                     sys.exit(1)
                 else:
                     self.interface = argv[i + 1]
+                    self.validateIface()
                     i = i + 2
                     continue
 
@@ -135,6 +136,19 @@ class AppConfig:
         self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
         self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
         return
+
+    """ Validates interface name """
+    def validateIface(self):
+        test = re.search('[ \t"/]', self.interface)
+        if test != None:
+            printf("Interface cannot have white spaces, slashes or double quotes\n")
+            sys.exit(1)
+        if len(self.interface) == 0:
+            printf("Interface name cannot be empty\n")
+            sys.exit(1)
+        print(self.interface)
+        return
+
     """ Convert the configuration to string for debug purposes """
     def __str__(self):
         data = ""
