@@ -52,8 +52,13 @@ class AppConfig:
                 RemoteShark.printHelp(None)
                 sys.exit(0)
 
-            if argv[i] == '--debug' or argv[i] == '-d':
+            if argv[i] == '--debug':
                 self.debug = self.debug + 1
+                i = i + 1
+                continue
+
+            if re.match('^-d[d]*$', argv[i]):
+                self.debug = self.debug + len(re.findall('d', argv[i]))
                 i = i + 1
                 continue
 
