@@ -1,7 +1,8 @@
 # CHANGELOG
 
 ## Alpha 4
-* _Nothing so far_
+* Host validation no longer accepts hosts starting with '-'
+* Implemented experimental support for reading pcap file on the remote system
 
 ## Alpha 3
 
