@@ -139,9 +139,9 @@ class AppConfig:
 
     """ Validates interface name """
     def validateIface(self):
-        test = re.search('[ \t"/]', self.interface)
+        test = re.search('[ \t"/$`]', self.interface)
         if test != None:
-            printf("Interface cannot have white spaces, slashes or double quotes\n")
+            printf("Interface cannot have white spaces, slashes, dollar signs, backtick or double quotes\n")
             sys.exit(1)
         if len(self.interface) == 0:
             printf("Interface name cannot be empty\n")
@@ -380,7 +380,7 @@ For Linux: (an idea)
         if cfg.packetCount != None and cfg.packetCount > 0:
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
         # It is important to suppress STDERR, otherwise the data from tcpdump STDERR will break Wireshark
-        tcpdumpCMD = sprintf('%s -U -ni %s -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
+        tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
