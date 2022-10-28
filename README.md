@@ -46,6 +46,7 @@ Load the first 100 packets from file `/tmp/capture.pcap`:
 
 Load from file `/tmp/capture.pcap` for 5 seconds:
 > `remoteShark.py 10.20.30.40:/tmp/capture.pcap -t 5`
+
 **Note:** this means that the system will be loading it for 5 seconds, and not the first 5 seconds of the remote packet capture
 
 ## TODO
