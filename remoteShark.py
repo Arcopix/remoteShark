@@ -170,6 +170,10 @@ class RemoteShark:
     platform = None
     cfg = None
 
+    __sshProcess = None
+    __plinkProcess = None
+    __wireProcess = None
+    
     def __init__(self):
         global cfg
 
@@ -315,10 +319,10 @@ For Linux: (an idea)
         if self.cfg.debug >= 3:
             printf('Running connection process "%s"\n', plinkCmd)
 
-        plinkProcess = subprocess.Popen(plinkCmd,
+        self.__plinkProcess = subprocess.Popen(plinkCmd,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        out, err = plinkProcess.communicate()
+        out, err = self.__plinkProcess.communicate()
 
         if (re.search("remoteShark::connectionTest::good", out.decode())):
             if self.cfg.debug >= 2:
@@ -356,14 +360,14 @@ For Linux: (an idea)
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
         plinkCmd = [cfg.plinkPath, '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
-        plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        self.__plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
         if self.cfg.debug >= 3:
             printf('Running connection process "%s"\n', plinkCmd)
 
-        plinkProcess.stdin.write('y'.encode())
-        plinkProcess.stdin.flush()
-        out, err = plinkProcess.communicate()
+        self.__plinkProcess.stdin.write('y'.encode())
+        self.__plinkProcess.stdin.flush()
+        out, err = self.__plinkProcess.communicate()
 
         printf("%s\n", out.decode())
         printf("%s\n", err.decode())
@@ -407,11 +411,11 @@ For Linux: (an idea)
                 printf('Running connection process "%s"\n', plinkCmd)
                 printf('Running Wireshark process "%s"\n', wireCmd)
             
-            plinkProcess = subprocess.Popen(plinkCmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            wireProcess = subprocess.Popen(wireCmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=plinkProcess.stdout,
-                creationflags=DETACHED_PROCESS)
+            self.__plinkProcess = subprocess.Popen(plinkCmd,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            self.__wireProcess = subprocess.Popen(wireCmd,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__plinkProcess.stdout,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else: # Linux or Mac (Darwin)
             sshCmd = [cfg.plinkPath, login, tcpdumpCMD]
 
@@ -420,13 +424,13 @@ For Linux: (an idea)
                 printf('Running Wireshark process "%s"\n', wireCmd)
 
             # TODO See detaching via preexec_fn=os.setpgrp()
-            sshProcess = subprocess.Popen(sshCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
-            wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=sshProcess.stdout)
+            self.__sshProcess = subprocess.Popen(sshCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+            self.__wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__sshProcess.stdout)
 
         # Run processes
         if cfg.runTimeout != None and cfg.runTimeout > 0:
             try:
-                wireProcess.wait(cfg.runTimeout)
+                self.__wireProcess.wait(cfg.runTimeout)
             except subprocess.TimeoutExpired:
                 # Leave wireshark process running
                 if self.cfg.debug >= 1:
@@ -436,7 +440,11 @@ For Linux: (an idea)
                 printf("Unknown issue\n")
                 sys.exit(1)
         else:
-            out, err = wireProcess.communicate()
+            printf("Press Ctrl+C to terminate capture and exit\n")
+            while True:
+                time.sleep(1)
+
+
 
 if __name__ == '__main__':
     # Initialize configuration
