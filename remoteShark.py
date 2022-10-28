@@ -99,6 +99,7 @@ class AppConfig:
                     self.sshUser = argv[i + 1]
                     i = i + 2
                     continue
+
             if argv[i] == '--filter' or argv[i] == '-f':
                 if argc <= i + 1:
                     printf("%s requires an argument\n", argv[i])
@@ -109,6 +110,7 @@ class AppConfig:
                     self.escapeFilter()
                     i = i + 2
                     continue
+
             if argv[i] == '--interface' or argv[i] == '-i':
                 if argc <= i + 1:
                     printf("%s requires an argument\n", argv[i])
@@ -193,7 +195,8 @@ class RemoteShark:
 
     """
         printf("%s\n", helpData)
-    
+        return
+
     """ Detect plink/ssh and wireshark availability and capabilities """
     def detectRequirement(self):
         global WIN_WIRESHARK_PATH
@@ -263,7 +266,6 @@ class RemoteShark:
                     printf("Detected Wireshark version %s%s\n", out.decode().split("\n")[0], err.decode().split("\n")[0])
                 cfg.wiresharkPath = wiresharkPath
                 WIRESHARK_FOUND = True
-        
             
         return WIRESHARK_FOUND and PLINK_FOUND
     
