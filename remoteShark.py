@@ -441,6 +441,12 @@ if __name__ == '__main__':
     # Initialize configuration
     cfg = AppConfig(sys.argv)
 
+    if cfg.sshHost == None or len(cfg.sshHost) == 0:
+        printf("No host was specified\n\n")
+        app = RemoteShark()
+        app.printHelp()
+        sys.exit(1)
+
     # Initialize the application
     app = RemoteShark()
 
