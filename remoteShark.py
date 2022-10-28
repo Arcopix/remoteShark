@@ -1,13 +1,32 @@
 #!/usr/bin/python3
-# remoteShark utility, Python version
+# -*- coding: utf-8 -*-
+"""
+  RemoteShark is a utility allowing the user to capture traffic in real-time
+  from remote system which supports SSH and tcpdump into local Wireshark.
+  
+  The utility supports Linux/MacOS/Windows local workstations and most if not
+  all Unix/Linux systems.
+"""
+__author__ = "Stefan Lekov"
+__copyright__ = "Copyright 2022, Devhex Ltd"
+__credits__ = ["Stefan Lekov", "Theo Belder", "Atanas Angelov", "Linda Aleksandrova" ]
+__license__ = "GPLv3"
+__version__ = "1.0.0-alpha3"
+__maintainer__ = "Stefan Lekov"
+__email__ = "stefan.lekov@devhex.org"
+__status__ = "Testing"
 
 import sys
 import os
 import os.path
 import re
 import inspect
+from ipaddress import ip_address
+import time
 import subprocess
 import platform
+import signal
+from socket import gethostbyname
 
 # Use Devhex' Python common for printf/sprintf
 try:
@@ -38,6 +57,7 @@ class AppConfig:
     debug = 0
 
     def __init__(self, argv):
+        """ Construct the application's configuration """
         argc = len(argv)
         if argc == 1:
             RemoteShark.printHelp(None)
@@ -51,8 +71,13 @@ class AppConfig:
                 RemoteShark.printHelp(None)
                 sys.exit(0)
 
-            if argv[i] == '--debug' or argv[i] == '-d':
+            if argv[i] == '--debug':
                 self.debug = self.debug + 1
+                i = i + 1
+                continue
+
+            if re.match('^-d[d]*$', argv[i]):
+                self.debug = self.debug + len(re.findall('d', argv[i]))
                 i = i + 1
                 continue
 
@@ -93,34 +118,83 @@ class AppConfig:
                     self.sshUser = argv[i + 1]
                     i = i + 2
                     continue
+
             if argv[i] == '--filter' or argv[i] == '-f':
                 if argc <= i + 1:
                     printf("%s requires an argument\n", argv[i])
                     sys.exit(1)
                 else:
                     self.dumpFilter = argv[i + 1]
+                    self.validateFilter()
+                    self.escapeFilter()
                     i = i + 2
                     continue
+
             if argv[i] == '--interface' or argv[i] == '-i':
                 if argc <= i + 1:
                     printf("%s requires an argument\n", argv[i])
                     sys.exit(1)
                 else:
                     self.interface = argv[i + 1]
+                    self.validateIface()
                     i = i + 2
                     continue
 
             # Consume the first non-recognized argument as the host
             if self.sshHost == None:
                 self.sshHost = argv[i]
+                self.validateHost()
                 i = i + 1
                 continue
 
             printf("Unrecognized parameter %s\n", argv[i])
             i = i + 1
 
-    """ Convert the configuration to string for debug purposes """
+    def validateFilter(self):
+        """ Validates the PCAP filter in order to ensure that some special symbols are not used """
+        test = re.search('[\\\\;"`-]', self.dumpFilter)
+        if test != None:
+            printf("PCAP filter cannot have semicolon (;), backslash (\), dash (-), dollar sign ($), backtick (`) or double quotes (\")\n")
+            sys.exit(1)
+        return
+
+    def escapeFilter(self):
+        """ Escapes several special symbols in the PCAP filter """
+        self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
+        self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
+        return
+
+    def validateIface(self):
+        """ Validates interface name """
+        test = re.search('[ \t"/$`]', self.interface)
+        if test != None:
+            printf("Interface cannot have white spaces, slashes, dollar signs, backtick or double quotes\n")
+            sys.exit(1)
+        if len(self.interface) == 0:
+            printf("Interface name cannot be empty\n")
+            sys.exit(1)
+        print(self.interface)
+        return
+
+    def validateHost(self):
+        """ Validates specified host """
+        try:
+            ip_address(self.sshHost)
+            if self.debug > 2:
+                printf("Detected host (%s) as an IP address\n", self.sshHost)
+            return
+        except:
+            try:
+                buf = gethostbyname(self.sshHost)
+                if self.debug > 2:
+                    printf("Resolved host (%s) to %s\n", self.sshHost, buf)
+            except:
+                printf("Cannot resolve host %s\n", self.sshHost)
+                sys.exit(1)
+            return
+
     def __str__(self):
+        """ Convert the configuration to string for debug purposes """
         data = ""
         for x in inspect.getmembers(self):
             if not x[0].startswith('_'):
@@ -132,6 +206,10 @@ class RemoteShark:
     platform = None
     cfg = None
 
+    __sshProcess = None
+    __plinkProcess = None
+    __wireProcess = None
+    
     def __init__(self):
         global cfg
 
@@ -141,8 +219,8 @@ class RemoteShark:
         if cfg.debug >= 2:
             printf("Detected platform '%s'\n", self.platform)
     
-    """ Print usage information for the utility """
     def printHelp(self):
+        """ Print usage information for the utility """
         helpData = """Usage: remoteShark.py [OPTIONS] host
  -c  --count             Stop capture after receiving count packets
  -d  --debug             Enables debug mode
@@ -158,9 +236,10 @@ class RemoteShark:
 
     """
         printf("%s\n", helpData)
-    
-    """ Detect plink/ssh and wireshark availability and capabilities """
+        return
+
     def detectRequirement(self):
+        """ Detect plink/ssh and wireshark availability and capabilities """
         global WIN_WIRESHARK_PATH
         global WIN_PLINK_PATH
         global cfg
@@ -228,12 +307,11 @@ class RemoteShark:
                     printf("Detected Wireshark version %s%s\n", out.decode().split("\n")[0], err.decode().split("\n")[0])
                 cfg.wiresharkPath = wiresharkPath
                 WIRESHARK_FOUND = True
-        
             
         return WIRESHARK_FOUND and PLINK_FOUND
     
-    """ Connect to remote host and list available interfaces on the remote system """
     def listInterfaces(self):
+        """ Connect to remote host and list available interfaces on the remote system """
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
         command = """
@@ -244,6 +322,7 @@ sed 's/(.*)//g;s/\[//g;s/\\]//g;s/ [ ]\+/ /g' | sed "s/^\([^ ]\+\) \(.*\)$/'\\1'
 xargs printf "%10s | %24s\\n"
 """
         if self.platform == 'Windows':
+            self.testConnection()
             process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else: # Linux or Mac (Darwin)
             process = subprocess.Popen([cfg.plinkPath, login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -251,8 +330,8 @@ xargs printf "%10s | %24s\\n"
         out, err = process.communicate()
         print(out.decode())
     
-    """ Proof of concept/development method for fetching remote packet capture instead of live capturing of traffic """
     def remotePCAP(self):
+        """ Proof of concept/development method for fetching remote packet capture instead of live capturing of traffic """
         # No implementation at the moment
         """ Some notes
 For Windows:
@@ -264,9 +343,78 @@ For Windows:
 For Linux: (an idea)
     linkCmd = ["scp USER@REMOTE:/tmp/p.pcap /tmp/XXX ; wireshak /tmp/xxx"]
         """
-    
-    """ Connect to the remote host and start local Wireshark for live capturing of traffic """
+
+    def testConnection(self):
+        """ Tests connection to the remote host (for Windows) and adds the remote host SSH key if needed """
+        # :: Try to login and generate output of "All good" to check for connection issues
+        # %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
+        global cfg
+        login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
+        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+
+        if self.cfg.debug >= 3:
+            printf('Running connection process "%s"\n', plinkCmd)
+
+        self.__plinkProcess = subprocess.Popen(plinkCmd,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        out, err = self.__plinkProcess.communicate()
+
+        if (re.search("remoteShark::connectionTest::good", out.decode())):
+            if self.cfg.debug >= 2:
+                printf('Successful connection to the remote host')
+            return
+
+        if (re.search("The server's host key is not cached", err.decode())):
+            printf("%s\n", err.decode())
+            printf("\n\nThis utility will automatically add the host key in 5 seconds.\n")
+            printf("Press Ctrl+C to abort... \n")
+            try:
+                time.sleep(5)
+            except(KeyboardInterrupt):
+                printf("ABORTED\n")
+                sys.exit(0)
+
+            if (self.addHostKeyCache()):
+                return
+            else:
+                printf("Error occurred while attempting to add the host key\n")
+                printf("%s\n", out.decode())
+                printf("%s\n", err.decode())
+                sys.exit(1)
+        else:
+            printf("Error while testing connection to %s\n", cfg.sshHost)
+            printf("%s\n", out.decode())
+            printf("%s\n", err.decode())
+            sys.exit(1)
+
+        return
+
+    def addHostKeyCache(self):
+        """ Automatically adds the remote host RSA keys to the local cache """
+        global cfg
+        login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
+
+        plinkCmd = [cfg.plinkPath, '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+        self.__plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+
+        if self.cfg.debug >= 3:
+            printf('Running connection process "%s"\n', plinkCmd)
+
+        self.__plinkProcess.stdin.write('y'.encode())
+        self.__plinkProcess.stdin.flush()
+        out, err = self.__plinkProcess.communicate()
+
+        printf("%s\n", out.decode())
+        printf("%s\n", err.decode())
+
+        if (re.search("remoteShark::connectionTest::good", out.decode())):
+            return True
+        else:
+            return False
+
     def runWireshark(self):
+        """ Connect to the remote host and start local Wireshark for live capturing of traffic """
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
@@ -281,7 +429,7 @@ For Linux: (an idea)
         if cfg.packetCount != None and cfg.packetCount > 0:
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
         # It is important to suppress STDERR, otherwise the data from tcpdump STDERR will break Wireshark
-        tcpdumpCMD = sprintf('%s -U -ni %s -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
+        tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
@@ -289,33 +437,37 @@ For Linux: (an idea)
         # Wireshark is run with the same arguments for all OS
         wireCmd = [cfg.wiresharkPath, '-k', '-i', '-']
 
+        self.setupSignals()
+
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
             plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD]
+
+            self.testConnection()
 
             if self.cfg.debug >= 3:
                 printf('Running connection process "%s"\n', plinkCmd)
                 printf('Running Wireshark process "%s"\n', wireCmd)
             
-            plinkProcess = subprocess.Popen(plinkCmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            wireProcess = subprocess.Popen(wireCmd,
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=plinkProcess.stdout,
-                creationflags=DETACHED_PROCESS)
+            self.__plinkProcess = subprocess.Popen(plinkCmd,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+            self.__wireProcess = subprocess.Popen(wireCmd,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__plinkProcess.stdout,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else: # Linux or Mac (Darwin)
             sshCmd = [cfg.plinkPath, login, tcpdumpCMD]
 
             if self.cfg.debug >= 3:
-                printf('Running connection process "%s"\n', plinkCmd)
+                printf('Running connection process "%s"\n', sshCmd)
                 printf('Running Wireshark process "%s"\n', wireCmd)
 
-            sshProcess = subprocess.Popen(sshCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
-            wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=sshProcess.stdout)
+            self.__sshProcess = subprocess.Popen(sshCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
+            self.__wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__sshProcess.stdout, start_new_session=True)
 
         # Run processes
         if cfg.runTimeout != None and cfg.runTimeout > 0:
             try:
-                wireProcess.wait(cfg.runTimeout)
+                self.__wireProcess.wait(cfg.runTimeout)
             except subprocess.TimeoutExpired:
                 # Leave wireshark process running
                 if self.cfg.debug >= 1:
@@ -325,11 +477,49 @@ For Linux: (an idea)
                 printf("Unknown issue\n")
                 sys.exit(1)
         else:
-            out, err = wireProcess.communicate()
+            printf("Press Ctrl+C to terminate capture and exit\n")
+            while True:
+                for p in (self.__sshProcess, self.__plinkProcess):
+                    if p != None and p.poll() != None:
+                        if self.cfg.debug > 3:
+                            printf("Detected exit from SSH, exiting\n")
+                        sys.exit(0)
+                
+                if self.__wireProcess.poll() != None:
+                    if self.cfg.debug > 3:
+                        printf("Detected exit from Wireshark, exiting\n")
+                    sys.exit(0)
+                
+                time.sleep(1)
+
+    def signalHandler(self, sig, frame):
+        printf("Cleaning the child with sig %d\n", sig)
+        if self.__plinkProcess != None:
+            printf("Stopping plink\n")
+            if self.__plinkProcess.poll() == None:
+                os.kill(self.__plinkProcess.pid, signal.SIGTERM)
+        if self.__sshProcess != None:
+            printf("Stopping SSH\n")
+            if self.__sshProcess.poll() == None:
+                os.kill(self.__sshProcess.pid, signal.SIGTERM)
+        sys.exit(0)
+
+    def setupSignals(self):
+        for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGTERM):
+            if self.cfg.debug > 3:
+                printf("Setting the hook %s\n", signal.strsignal(sig))
+            signal.signal(sig, self.signalHandler)
+
 
 if __name__ == '__main__':
     # Initialize configuration
     cfg = AppConfig(sys.argv)
+
+    if cfg.sshHost == None or len(cfg.sshHost) == 0:
+        printf("No host was specified\n\n")
+        app = RemoteShark()
+        app.printHelp()
+        sys.exit(1)
 
     # Initialize the application
     app = RemoteShark()
@@ -350,3 +540,6 @@ if __name__ == '__main__':
         sys.exit(0)
 
     app.runWireshark()
+#" set autoindent expandtab tabstop=4 shiftwidth=4
+#" vim: autoindent expandtab tabstop=4 shiftwidth=4
+# vim: et ts=4 sw=4 sts=4
