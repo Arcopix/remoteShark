@@ -1,5 +1,20 @@
 #!/usr/bin/python3
-# remoteShark utility, Python version
+# -*- coding: utf-8 -*-
+"""
+  RemoteShark is a utility allowing the user to capture traffic in real-time
+  from remote system which supports SSH and tcpdump into local Wireshark.
+  
+  The utility supports Linux/MacOS/Windows local workstations and most if not
+  all Unix/Linux systems.
+"""
+__author__ = "Stefan Lekov"
+__copyright__ = "Copyright 2022, Devhex Ltd"
+__credits__ = ["Stefan Lekov", "Theo Belder", "Atanas Angelov", "Linda Aleksandrova" ]
+__license__ = "GPLv3"
+__version__ = "1.0.0-alpha3"
+__maintainer__ = "Stefan Lekov"
+__email__ = "stefan.lekov@devhex.org"
+__status__ = "Testing"
 
 import sys
 import os
