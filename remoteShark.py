@@ -39,6 +39,7 @@ class AppConfig:
     debug = 0
 
     def __init__(self, argv):
+        """ Construct the application's configuration """
         argc = len(argv)
         if argc == 1:
             RemoteShark.printHelp(None)
@@ -130,22 +131,22 @@ class AppConfig:
             printf("Unrecognized parameter %s\n", argv[i])
             i = i + 1
 
-    """ Validates the PCAP filter in order to ensure that some special symbols are not used """
     def validateFilter(self):
+        """ Validates the PCAP filter in order to ensure that some special symbols are not used """
         test = re.search('[\\\\;"`-]', self.dumpFilter)
         if test != None:
             printf("PCAP filter cannot have semicolon (;), backslash (\), dash (-), dollar sign ($), backtick (`) or double quotes (\")\n")
             sys.exit(1)
         return
 
-    """ Escapes several special symbols in the PCAP filter """
     def escapeFilter(self):
+        """ Escapes several special symbols in the PCAP filter """
         self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
         self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
         return
 
-    """ Validates interface name """
     def validateIface(self):
+        """ Validates interface name """
         test = re.search('[ \t"/$`]', self.interface)
         if test != None:
             printf("Interface cannot have white spaces, slashes, dollar signs, backtick or double quotes\n")
@@ -156,8 +157,8 @@ class AppConfig:
         print(self.interface)
         return
 
-    """ Convert the configuration to string for debug purposes """
     def __str__(self):
+        """ Convert the configuration to string for debug purposes """
         data = ""
         for x in inspect.getmembers(self):
             if not x[0].startswith('_'):
@@ -178,8 +179,8 @@ class RemoteShark:
         if cfg.debug >= 2:
             printf("Detected platform '%s'\n", self.platform)
     
-    """ Print usage information for the utility """
     def printHelp(self):
+        """ Print usage information for the utility """
         helpData = """Usage: remoteShark.py [OPTIONS] host
  -c  --count             Stop capture after receiving count packets
  -d  --debug             Enables debug mode
@@ -197,8 +198,8 @@ class RemoteShark:
         printf("%s\n", helpData)
         return
 
-    """ Detect plink/ssh and wireshark availability and capabilities """
     def detectRequirement(self):
+        """ Detect plink/ssh and wireshark availability and capabilities """
         global WIN_WIRESHARK_PATH
         global WIN_PLINK_PATH
         global cfg
@@ -269,8 +270,8 @@ class RemoteShark:
             
         return WIRESHARK_FOUND and PLINK_FOUND
     
-    """ Connect to remote host and list available interfaces on the remote system """
     def listInterfaces(self):
+        """ Connect to remote host and list available interfaces on the remote system """
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
         command = """
@@ -289,8 +290,8 @@ xargs printf "%10s | %24s\\n"
         out, err = process.communicate()
         print(out.decode())
     
-    """ Proof of concept/development method for fetching remote packet capture instead of live capturing of traffic """
     def remotePCAP(self):
+        """ Proof of concept/development method for fetching remote packet capture instead of live capturing of traffic """
         # No implementation at the moment
         """ Some notes
 For Windows:
@@ -303,8 +304,8 @@ For Linux: (an idea)
     linkCmd = ["scp USER@REMOTE:/tmp/p.pcap /tmp/XXX ; wireshak /tmp/xxx"]
         """
 
-    """ Tests connection to the remote host (for Windows) and adds the remote host SSH key if needed """
     def testConnection(self):
+        """ Tests connection to the remote host (for Windows) and adds the remote host SSH key if needed """
         # :: Try to login and generate output of "All good" to check for connection issues
         # %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
         global cfg
@@ -350,6 +351,7 @@ For Linux: (an idea)
         return
 
     def addHostKeyCache(self):
+        """ Automatically adds the remote host RSA keys to the local cache """
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
@@ -371,8 +373,8 @@ For Linux: (an idea)
         else:
             return False
 
-    """ Connect to the remote host and start local Wireshark for live capturing of traffic """
     def runWireshark(self):
+        """ Connect to the remote host and start local Wireshark for live capturing of traffic """
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
