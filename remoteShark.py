@@ -496,10 +496,12 @@ For Linux: (an idea)
         printf("Cleaning the child with sig %d\n", sig)
         if self.__plinkProcess != None:
             printf("Stopping plink\n")
-            if self.__sshProcess.poll() == None:
-                os.kill(self.__sshProcess.pid, signal.SIGTERM)
             if self.__plinkProcess.poll() == None:
                 os.kill(self.__plinkProcess.pid, signal.SIGTERM)
+        if self.__sshProcess != None:
+            printf("Stopping SSH\n")
+            if self.__sshProcess.poll() == None:
+                os.kill(self.__sshProcess.pid, signal.SIGTERM)
         sys.exit(0)
 
     def setupSignals(self):
