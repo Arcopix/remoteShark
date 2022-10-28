@@ -6,10 +6,12 @@ import os
 import os.path
 import re
 import inspect
+from ipaddress import ip_address
 import time
 import subprocess
 import platform
 import signal
+from socket import gethostbyname
 
 # Use Devhex' Python common for printf/sprintf
 try:
@@ -126,6 +128,7 @@ class AppConfig:
             # Consume the first non-recognized argument as the host
             if self.sshHost == None:
                 self.sshHost = argv[i]
+                self.validateHost()
                 i = i + 1
                 continue
 
@@ -157,6 +160,23 @@ class AppConfig:
             sys.exit(1)
         print(self.interface)
         return
+
+    def validateHost(self):
+        """ Validates specified host """
+        try:
+            ip_address(self.sshHost)
+            if self.debug > 2:
+                printf("Detected host (%s) as an IP address\n", self.sshHost)
+            return
+        except:
+            try:
+                buf = gethostbyname(self.sshHost)
+                if self.debug > 2:
+                    printf("Resolved host (%s) to %s\n", self.sshHost, buf)
+            except:
+                printf("Cannot resolve host %s\n", self.sshHost)
+                sys.exit(1)
+            return
 
     def __str__(self):
         """ Convert the configuration to string for debug purposes """
