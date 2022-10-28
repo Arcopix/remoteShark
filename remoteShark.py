@@ -9,6 +9,7 @@ import inspect
 import time
 import subprocess
 import platform
+import signal
 
 # Use Devhex' Python common for printf/sprintf
 try:
@@ -401,6 +402,8 @@ For Linux: (an idea)
         # Wireshark is run with the same arguments for all OS
         wireCmd = [cfg.wiresharkPath, '-k', '-i', '-']
 
+        self.setupSignals()
+
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
             plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD]
@@ -442,8 +445,25 @@ For Linux: (an idea)
         else:
             printf("Press Ctrl+C to terminate capture and exit\n")
             while True:
+                if self.__wireProcess.poll() != None:
+                    if self.cfg.debug > 3:
+                        printf("Detected exit from Wireshark, exiting\n")
+                    sys.exit(0)
                 time.sleep(1)
 
+    def signalHandler(self, sig, frame):
+        printf("Cleaning the child with sig %d\n", sig)
+        if self.__plinkProcess != None:
+            printf("Stopping plink\n")
+            if self.__plinkProcess.poll() == None:
+                os.kill(self.__plinkProcess.pid, signal.SIGTERM)
+        sys.exit(0)
+
+    def setupSignals(self):
+        for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGTERM):
+            if self.cfg.debug > 3:
+                printf("Setting the hook %s\n", signal.strsignal(sig))
+            signal.signal(sig, self.signalHandler)
 
 
 if __name__ == '__main__':
