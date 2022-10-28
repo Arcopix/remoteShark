@@ -141,7 +141,7 @@ class AppConfig:
                     continue
 
             # Consume the first non-recognized argument as the host
-            if self.sshHost == None:
+            if self.sshHost == None and argv[i][0] != '-':
                 self.sshHost = argv[i]
                 self.validateHost()
                 i = i + 1
