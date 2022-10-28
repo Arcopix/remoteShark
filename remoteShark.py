@@ -100,6 +100,8 @@ class AppConfig:
                     sys.exit(1)
                 else:
                     self.dumpFilter = argv[i + 1]
+                    self.validateFilter()
+                    self.escapeFilter()
                     i = i + 2
                     continue
             if argv[i] == '--interface' or argv[i] == '-i':
@@ -120,6 +122,19 @@ class AppConfig:
             printf("Unrecognized parameter %s\n", argv[i])
             i = i + 1
 
+    """ Validates the PCAP filter in order to ensure that some special symbols are not used """
+    def validateFilter(self):
+        test = re.search('[\\\\;"`-]', self.dumpFilter)
+        if test != None:
+            printf("PCAP filter cannot have semicolon (;), backslash (\), dash (-), dollar sign ($), backtick (`) or double quotes (\")\n")
+            sys.exit(1)
+        return
+
+    """ Escapes several special symbols in the PCAP filter """
+    def escapeFilter(self):
+        self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
+        self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
+        return
     """ Convert the configuration to string for debug purposes """
     def __str__(self):
         data = ""
