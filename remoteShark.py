@@ -419,6 +419,7 @@ For Linux: (an idea)
                 printf('Running connection process "%s"\n', plinkCmd)
                 printf('Running Wireshark process "%s"\n', wireCmd)
 
+            # TODO See detaching via preexec_fn=os.setpgrp()
             sshProcess = subprocess.Popen(sshCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
             wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=sshProcess.stdout)
 
