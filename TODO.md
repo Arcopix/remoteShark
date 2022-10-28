@@ -3,6 +3,8 @@
 2. Fully test (and bugfix) for Mac
 5. Fully test and bugfix
 8. Split remoteShark.py into a library and have basic scripts which execute the behavior _(?)_
+9. Support for display filter in local Wireshark
+10. Support for non standard SSH port
 
 ## DONE
 
