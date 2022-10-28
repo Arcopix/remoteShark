@@ -423,7 +423,7 @@ For Linux: (an idea)
             sshCmd = [cfg.plinkPath, login, tcpdumpCMD]
 
             if self.cfg.debug >= 3:
-                printf('Running connection process "%s"\n', plinkCmd)
+                printf('Running connection process "%s"\n', sshCmd)
                 printf('Running Wireshark process "%s"\n', wireCmd)
 
             # TODO See detaching via preexec_fn=os.setpgrp()
