@@ -504,3 +504,6 @@ if __name__ == '__main__':
         sys.exit(0)
 
     app.runWireshark()
+#" set autoindent expandtab tabstop=4 shiftwidth=4
+#" vim: autoindent expandtab tabstop=4 shiftwidth=4
+# vim: et ts=4 sw=4 sts=4
