@@ -428,7 +428,7 @@ For Linux: (an idea)
 
             # TODO See detaching via preexec_fn=os.setpgrp()
             self.__sshProcess = subprocess.Popen(sshCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=os.environ.copy())
-            self.__wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__sshProcess.stdout)
+            self.__wireProcess = subprocess.Popen(wireCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__sshProcess.stdout, start_new_session=True)
 
         # Run processes
         if cfg.runTimeout != None and cfg.runTimeout > 0:
@@ -445,16 +445,25 @@ For Linux: (an idea)
         else:
             printf("Press Ctrl+C to terminate capture and exit\n")
             while True:
+                for p in (self.__sshProcess, self.__plinkProcess):
+                    if p != None and p.poll() != None:
+                        if self.cfg.debug > 3:
+                            printf("Detected exit from SSH, exiting\n")
+                        sys.exit(0)
+                
                 if self.__wireProcess.poll() != None:
                     if self.cfg.debug > 3:
                         printf("Detected exit from Wireshark, exiting\n")
                     sys.exit(0)
+                
                 time.sleep(1)
 
     def signalHandler(self, sig, frame):
         printf("Cleaning the child with sig %d\n", sig)
         if self.__plinkProcess != None:
             printf("Stopping plink\n")
+            if self.__sshProcess.poll() == None:
+                os.kill(self.__sshProcess.pid, signal.SIGTERM)
             if self.__plinkProcess.poll() == None:
                 os.kill(self.__plinkProcess.pid, signal.SIGTERM)
         sys.exit(0)
