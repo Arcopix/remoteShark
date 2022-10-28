@@ -5,6 +5,8 @@
 8. Split remoteShark.py into a library and have basic scripts which execute the behavior _(?)_
 9. Support for display filter in local Wireshark
 10. Support for non standard SSH port
+11. Update project dir tree (remove win/linux dirs, move sources to src)
+12. Build system for compiling via pyinstaller
 
 ## DONE
 
