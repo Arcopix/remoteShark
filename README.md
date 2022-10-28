@@ -11,8 +11,12 @@ A set of utilities allowing the user to capture traffic in real-time from remote
 
 ## HOWTO
 
+### Listing interfaces
+
 Listing interfaces on remote system `10.20.30.40`:
 > `remoteShark.py 10.20.30.40 --list-interfaces`
+
+### Live packet captures
 
 Capture any traffic on remote system `10.20.30.40`:
 > `remoteShark.py 10.20.30.40`
@@ -28,6 +32,8 @@ Capture SIP traffic (`port 5060 or 5061`) for 100 packets on any interface on re
 
 Capture SMTP traffic (`port 25`) for 5 minutes (300 seconds) on eth0.44 interface on remote system `10.20.30.40`:
 > `remoteShark.py 10.20.30.40 -f "port 25" -t 300 -i eth0.44`
+
+### Processing remote PCAP files
 
 Load file `/tmp/capture.pcap` from the remote system into Wireshark
 > `remoteShark.py 10.20.30.40:/tmp/capture.pcap`
