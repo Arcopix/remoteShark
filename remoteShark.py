@@ -53,6 +53,7 @@ class AppConfig:
     sshUser = 'root'
     sshHost = None
     dumpFilter = 'not port 22'
+    remotePcapFile = None
 
     debug = 0
 
@@ -178,6 +179,10 @@ class AppConfig:
 
     def validateHost(self):
         """ Validates specified host """
+        if re.search(':', self.sshHost):
+            buf = self.sshHost.split(':', 1)
+            self.sshHost = buf[0]
+            self.remotePcapFile = buf[1]
         try:
             ip_address(self.sshHost)
             if self.debug > 2:
@@ -429,7 +434,10 @@ For Linux: (an idea)
         if cfg.packetCount != None and cfg.packetCount > 0:
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
         # It is important to suppress STDERR, otherwise the data from tcpdump STDERR will break Wireshark
-        tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
+        if cfg.remotePcapFile == None:
+            tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
+        else:
+            tcpdumpCMD = sprintf('%s -U -n -r %s -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.remotePcapFile, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
