@@ -352,20 +352,6 @@ xargs printf "%10s | %24s\\n"
 
         out, err = process.communicate()
         print(out.decode())
-    
-    def remotePCAP(self):
-        """ Proof of concept/development method for fetching remote packet capture instead of live capturing of traffic """
-        # No implementation at the moment
-        """ Some notes
-For Windows:
-    (successful proof of concept)
-        # plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "cat /tmp/p.pcap"]
-    (an idea) Wireshak generally understands GZIP data, might be an idea to reduce transfer times
-        # plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "cat /tmp/p.pcap | gzip"]
-        Added general ideas for accessing remote
-For Linux: (an idea)
-    linkCmd = ["scp USER@REMOTE:/tmp/p.pcap /tmp/XXX ; wireshak /tmp/xxx"]
-        """
 
     def testConnection(self):
         """ Tests connection to the remote host (for Windows) and adds the remote host SSH key if needed """
