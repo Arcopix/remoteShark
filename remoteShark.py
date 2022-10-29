@@ -144,8 +144,8 @@ class AppConfig:
                     sys.exit(1)
                 else:
                     self.dumpFilter = argv[i + 1]
-                    self.validateFilter()
-                    self.escapeFilter()
+                    self.__validateFilter()
+                    self.__escapeFilter()
                     i = i + 2
                     continue
 
@@ -155,21 +155,21 @@ class AppConfig:
                     sys.exit(1)
                 else:
                     self.interface = argv[i + 1]
-                    self.validateIface()
+                    self.__validateIface()
                     i = i + 2
                     continue
 
             # Consume the first non-recognized argument as the host
             if self.sshHost == None and argv[i][0] != '-':
                 self.sshHost = argv[i]
-                self.validateHost()
+                self.__validateHost()
                 i = i + 1
                 continue
 
             printf("Unrecognized parameter %s\n", argv[i])
             i = i + 1
 
-    def validateFilter(self):
+    def __validateFilter(self):
         """ Validates the PCAP filter in order to ensure that some special symbols are not used """
         test = re.search('[\\\\;"`-]', self.dumpFilter)
         if test != None:
@@ -177,13 +177,13 @@ class AppConfig:
             sys.exit(1)
         return
 
-    def escapeFilter(self):
+    def __escapeFilter(self):
         """ Escapes several special symbols in the PCAP filter """
         self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
         self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
         return
 
-    def validateIface(self):
+    def __validateIface(self):
         """ Validates interface name """
         test = re.search('[ \t"/$`]', self.interface)
         if test != None:
@@ -195,7 +195,7 @@ class AppConfig:
         print(self.interface)
         return
 
-    def validateHost(self):
+    def __validateHost(self):
         """ Validates specified host """
         if re.search(':', self.sshHost):
             buf = self.sshHost.split(':', 1)
