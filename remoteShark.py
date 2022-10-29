@@ -52,6 +52,7 @@ class AppConfig:
     interface = 'any'
     sshUser = 'root'
     sshHost = None
+    sshPort = 22
     dumpFilter = 'not port 22'
     remotePcapFile = None
 
@@ -117,6 +118,15 @@ class AppConfig:
                     sys.exit(1)
                 else:
                     self.sshUser = argv[i + 1]
+                    i = i + 2
+                    continue
+
+            if argv[i] == '--port' or argv[i] == '-p':
+                if argc <= i + 1:
+                    printf("%s requires an argument\n", argv[i])
+                    sys.exit(1)
+                else:
+                    self.sshPort = argv[i + 1]
                     i = i + 2
                     continue
 
