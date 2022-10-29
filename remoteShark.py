@@ -126,11 +126,15 @@ class AppConfig:
                     printf("%s requires an argument\n", argv[i])
                     sys.exit(1)
                 else:
-                    if self.dumpFilter == sprintf("not port %s", self.sshPort):
-                        self.dumpFilter = sprintf("not port %s", str(int(argv[i + 1])))
-                        if self.debug > 2:
-                            printf("Switching default pcap filter to %s", self.dumpFilter)
-                    self.sshPort = str(int(argv[i + 1]))
+                    try:
+                        if self.dumpFilter == sprintf("not port %s", self.sshPort):
+                            self.dumpFilter = sprintf("not port %s", str(int(argv[i + 1])))
+                            if self.debug > 2:
+                                printf("Switching default pcap filter to %s", self.dumpFilter)
+                        self.sshPort = str(int(argv[i + 1]))
+                    except ValueError:
+                        printf("%s requires an integer argument\n", argv[i])
+                        sys.exit(2)
                     i = i + 2
                     continue
 
