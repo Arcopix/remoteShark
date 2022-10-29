@@ -338,7 +338,7 @@ xargs printf "%10s | %24s\\n"
 """
         if self.platform == 'Windows':
             self.testConnection()
-            process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, '-P', self.sshPort, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else: # Linux or Mac (Darwin)
             process = subprocess.Popen([cfg.plinkPath, login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -365,7 +365,7 @@ For Linux: (an idea)
         # %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
-        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', self.sshPort, "echo \"remoteShark::connectionTest::good\""]
 
         if self.cfg.debug >= 3:
             printf('Running connection process "%s"\n', plinkCmd)
@@ -410,7 +410,7 @@ For Linux: (an idea)
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
-        plinkCmd = [cfg.plinkPath, '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+        plinkCmd = [cfg.plinkPath, '-ssh', login, '-P', self.sshPort, "echo \"remoteShark::connectionTest::good\""]
         self.__plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
         if self.cfg.debug >= 3:
@@ -459,7 +459,7 @@ For Linux: (an idea)
 
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
-            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD]
+            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', self.sshPort, tcpdumpCMD]
 
             self.testConnection()
 
@@ -473,7 +473,7 @@ For Linux: (an idea)
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__plinkProcess.stdout,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else: # Linux or Mac (Darwin)
-            sshCmd = [cfg.plinkPath, login, tcpdumpCMD]
+            sshCmd = [cfg.plinkPath, login, '-P', self.sshPort, tcpdumpCMD]
 
             if self.cfg.debug >= 3:
                 printf('Running connection process "%s"\n', sshCmd)
