@@ -3,6 +3,7 @@
 ## Alpha 4
 * Host validation no longer accepts hosts starting with '-'
 * Implemented experimental support for reading pcap file on the remote system
+* Validation methods of AppConfig are now private
 
 ## Alpha 3
 
