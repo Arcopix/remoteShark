@@ -6,7 +6,6 @@
 9. Support for display filter in local Wireshark
 11. Update project dir tree (remove win/linux dirs, move sources to src)
 12. Build system for compiling via pyinstaller
-13. Implement compression of the stream
 
 ## DONE
 
@@ -19,4 +18,5 @@
 7. Detection of *HOST* between *FQDN* and *IP* address
 8. Detached Wireshark in Linux _(?)_
 9. Work with remote pcap files
-10. Support for non standard SSH port
+10. Support for non-standard SSH port
+11. Implement compression of the data stream
