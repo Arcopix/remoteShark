@@ -228,6 +228,10 @@ class AppConfig:
         if self.remotePcapFile != None and self.runTimeout != None:
             if self.debug > 0:
                 printf("Loading remote packet capture file in conjunction with -t|--timeout does not limit the data to timeout but limits time to load the data\n")
+        if self.remotePcapFile != None and self.compression == None:
+            if self.debug > 0:
+                printf("Detected remote file instead of a live capture. Enabling --compression by default. You can disable this behavior by --no-compression\n")
+            self.compression = True
         return
 
     def __str__(self):
