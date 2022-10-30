@@ -1,0 +1,5 @@
+#!/bin/bash
+
+ssh root@$1 "tcpdump -ni $2 -s 0 -w - $3 2>/dev/null | gzip -9 -c -f" | gzip -d | wireshark -k -i -
+
+
