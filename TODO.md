@@ -6,6 +6,7 @@
 9. Support for display filter in local Wireshark
 11. Update project dir tree (remove win/linux dirs, move sources to src)
 12. Build system for compiling via pyinstaller
+13. Implement compression of the stream
 
 ## DONE
 
