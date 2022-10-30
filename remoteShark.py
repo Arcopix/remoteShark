@@ -55,7 +55,8 @@ class AppConfig:
     sshPort = '22'
     dumpFilter = 'not port 22'
     remotePcapFile = None
-
+    compression = None
+    
     debug = 0
 
     def __init__(self, argv):
@@ -98,6 +99,11 @@ class AppConfig:
                     printf("%s requires an integer argument\n", argv[i])
                     sys.exit(2)
                 i = i + 2
+                continue
+            
+            if argv[i] == '--compression' or argv[i] == '-C':
+                self.compression = True
+                i = i + 1
                 continue
 
             if argv[i] == '--timeout' or argv[i] == '-t':
@@ -246,6 +252,7 @@ class RemoteShark:
         """ Print usage information for the utility """
         helpData = """Usage: remoteShark.py [OPTIONS] host
  -c  --count             Stop capture after receiving count packets
+ -C  --compression       Enables compression
  -d  --debug             Enables debug mode
  -f  --filter            Filters which packets will be captured. For filter
                          syntax see pcap-filter(7) man page on a Linux system.
@@ -454,8 +461,11 @@ xargs printf "%10s | %24s\\n"
 
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
-            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort, tcpdumpCMD]
-
+            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
+            if cfg.compression == True:
+                sshCmd.append('-C')
+            plinkCmd.append(tcpdumpCMD)
+            
             self.testConnection()
 
             if self.cfg.debug >= 3:
@@ -468,7 +478,10 @@ xargs printf "%10s | %24s\\n"
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__plinkProcess.stdout,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else: # Linux or Mac (Darwin)
-            sshCmd = [cfg.plinkPath, login, '-p', cfg.sshPort, tcpdumpCMD]
+            sshCmd = [cfg.plinkPath, login, '-p', cfg.sshPort]
+            if cfg.compression == True:
+                sshCmd.append('-C')
+            sshCmd.append(tcpdumpCMD)
 
             if self.cfg.debug >= 3:
                 printf('Running connection process "%s"\n', sshCmd)
