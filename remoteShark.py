@@ -481,7 +481,7 @@ xargs printf "%10s | %24s\\n"
             DETACHED_PROCESS = 0x00000008
             plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
             if cfg.compression == True:
-                sshCmd.append('-C')
+                plinkCmd.append('-C')
             plinkCmd.append(tcpdumpCMD)
             
             self.testConnection()
