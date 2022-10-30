@@ -52,7 +52,7 @@ class AppConfig:
     interface = 'any'
     sshUser = 'root'
     sshHost = None
-    sshPort = 22
+    sshPort = '22'
     dumpFilter = 'not port 22'
     remotePcapFile = None
 
@@ -467,7 +467,7 @@ xargs printf "%10s | %24s\\n"
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__plinkProcess.stdout,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else: # Linux or Mac (Darwin)
-            sshCmd = [cfg.plinkPath, login, '-P', cfg.sshPort, tcpdumpCMD]
+            sshCmd = [cfg.plinkPath, login, '-p', cfg.sshPort, tcpdumpCMD]
 
             if self.cfg.debug >= 3:
                 printf('Running connection process "%s"\n', sshCmd)
