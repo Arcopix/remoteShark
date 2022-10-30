@@ -42,6 +42,8 @@ WIN_PLINK_PATH="\\PuTTY\\plink.exe"
 
 MAC_WIRESHARK_PATH="/Applications/Wireshark.app/Contents/MacOS/Wireshark"
 
+SSH_DEBUG_LOG='ssh.debug'
+
 class AppConfig:
     # Path of binaries
     wiresharkPath = None
@@ -361,6 +363,29 @@ class RemoteShark:
             
         return WIRESHARK_FOUND and PLINK_FOUND
     
+    def __setupSSHdebug(self, cmd):
+        """ TBA """
+
+        # If debug is lower than 4, do not enable SSH debug
+        if self.cfg.debug < 4:
+            return
+        
+        printf("Enabling SSH debug. You can review it in ssh.debug\n")
+
+        if self.platform == 'Windows':
+            cmd.append('-sshlog')
+            plinkCmd.append(SSH_DEBUG_LOG)
+
+        if self.platform == 'Linux':
+            cmd.append('-vvv')
+            cmd.append('-E')
+            cmd.append(SSH_DEBUG_LOG)
+
+        if self.platform == 'Darwin':
+            printf("Do not know how to enable SSH debug in MacOS/Darwin\n")
+        
+        return
+
     def listInterfaces(self):
         """ Connect to remote host and list available interfaces on the remote system """
         global cfg
@@ -375,14 +400,11 @@ xargs printf "%10s | %24s\\n"
         if self.platform == 'Windows':
             self.testConnection()
             plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort, ]
-            if cfg.debug > 3:
-                printf("Enabling SSH debug. You can review it in ssh.debug\n")
-                plinkCmd.append('-sshlog')
-                plinkCmd.append('ssh.debug')
-
+            self.__setupSSHdebug(plinkCmd)
             plinkCmd.append(command)
         else: # Linux or Mac (Darwin)
             plinkCmd = [cfg.plinkPath, login, '-p', cfg.sshPort]
+            self.__setupSSHdebug(plinkCmd)
             plinkCmd.append(command)
 
         process = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -397,10 +419,7 @@ xargs printf "%10s | %24s\\n"
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
         plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
-        if cfg.debug > 3:
-            printf("Enabling SSH debug. You can review it in ssh.debug\n")
-            plinkCmd.append('-sshlog')
-            plinkCmd.append('ssh.debug')
+        self.__setupSSHdebug(plinkCmd)
         plinkCmd.append("echo \"remoteShark::connectionTest::good\"")
 
         if self.cfg.debug >= 3:
@@ -447,11 +466,9 @@ xargs printf "%10s | %24s\\n"
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
         plinkCmd = [cfg.plinkPath, '-ssh', login, '-P', cfg.sshPort]
-        if cfg.debug > 3:
-            printf("Enabling SSH debug. You can review it in ssh.debug\n")
-            plinkCmd.append('-sshlog')
-            plinkCmd.append('ssh.debug')
+        self.__setupSSHdebug(plinkCmd)
         plinkCmd.append("echo \"remoteShark::connectionTest::good\"")
+        
         self.__plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
         if self.cfg.debug >= 3:
@@ -503,11 +520,7 @@ xargs printf "%10s | %24s\\n"
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
             plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
-            if cfg.debug > 3:
-                printf("Enabling SSH debug. You can review it in ssh.debug\n")
-                plinkCmd.append('-sshlog')
-                plinkCmd.append('ssh.debug')
-
+            self.__setupSSHdebug(plinkCmd)
             if cfg.compression == True:
                 plinkCmd.append('-C')
             plinkCmd.append(tcpdumpCMD)
@@ -527,6 +540,7 @@ xargs printf "%10s | %24s\\n"
             sshCmd = [cfg.plinkPath, login, '-p', cfg.sshPort]
             if cfg.compression == True:
                 sshCmd.append('-C')
+            self.__setupSSHdebug(sshCmd)
             sshCmd.append(tcpdumpCMD)
 
             if self.cfg.debug >= 3:
@@ -586,7 +600,6 @@ xargs printf "%10s | %24s\\n"
             if self.cfg.debug > 3:
                 printf("Setting the hook %s\n", signal.strsignal(sig))
             signal.signal(sig, self.signalHandler)
-
 
 if __name__ == '__main__':
     # Initialize configuration
