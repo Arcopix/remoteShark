@@ -254,6 +254,7 @@ class RemoteShark:
      --list-interfaces   Connects to the remote host and lists interfaces
                          available for capturing traffic
  -i  --interface         Remote interface to listen on (default any)
+ -p  --port              SSH port to connect to
  -t  --timeout           Stop capture after timeout has expired
  -u  --user              SSH user to connect as (default root)
 
