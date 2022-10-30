@@ -348,7 +348,7 @@ xargs printf "%10s | %24s\\n"
             self.testConnection()
             process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         else: # Linux or Mac (Darwin)
-            process = subprocess.Popen([cfg.plinkPath, login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process = subprocess.Popen([cfg.plinkPath, login, '-p', cfg.sshPort, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         out, err = process.communicate()
         print(out.decode())
