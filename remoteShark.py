@@ -174,6 +174,7 @@ class AppConfig:
 
             printf("Unrecognized parameter %s\n", argv[i])
             i = i + 1
+        self.__postCfgPostprocess()
 
     def __validateFilter(self):
         """ Validates the PCAP filter in order to ensure that some special symbols are not used """
@@ -221,6 +222,13 @@ class AppConfig:
                 printf("Cannot resolve host %s\n", self.sshHost)
                 sys.exit(1)
             return
+    
+    def __postCfgPostprocess(self):
+        """ Runs several post-processing checks on the configuration """
+        if self.remotePcapFile != None and self.runTimeout != None:
+            if self.debug > 0:
+                printf("Loading remote packet capture file in conjunction with -t|--timeout does not limit the data to timeout but limits time to load the data\n")
+        return
 
     def __str__(self):
         """ Convert the configuration to string for debug purposes """
