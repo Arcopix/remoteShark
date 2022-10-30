@@ -255,7 +255,9 @@ class RemoteShark:
     __sshProcess = None
     __plinkProcess = None
     __wireProcess = None
-    
+
+    __starTime = None
+
     def __init__(self):
         global cfg
 
@@ -372,9 +374,18 @@ xargs printf "%10s | %24s\\n"
 """
         if self.platform == 'Windows':
             self.testConnection()
-            process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort, ]
+            if cfg.debug > 3:
+                printf("Enabling SSH debug. You can review it in ssh.debug\n")
+                plinkCmd.append('-sshlog')
+                plinkCmd.append('ssh.debug')
+
+            plinkCmd.append(command)
         else: # Linux or Mac (Darwin)
-            process = subprocess.Popen([cfg.plinkPath, login, '-p', cfg.sshPort, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            plinkCmd = [cfg.plinkPath, login, '-p', cfg.sshPort]
+            plinkCmd.append(command)
+
+        process = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         out, err = process.communicate()
         print(out.decode())
@@ -385,7 +396,12 @@ xargs printf "%10s | %24s\\n"
         # %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
-        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort, "echo \"remoteShark::connectionTest::good\""]
+        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
+        if cfg.debug > 3:
+            printf("Enabling SSH debug. You can review it in ssh.debug\n")
+            plinkCmd.append('-sshlog')
+            plinkCmd.append('ssh.debug')
+        plinkCmd.append("echo \"remoteShark::connectionTest::good\"")
 
         if self.cfg.debug >= 3:
             printf('Running connection process "%s"\n', plinkCmd)
@@ -430,7 +446,12 @@ xargs printf "%10s | %24s\\n"
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
-        plinkCmd = [cfg.plinkPath, '-ssh', login, '-P', cfg.sshPort, "echo \"remoteShark::connectionTest::good\""]
+        plinkCmd = [cfg.plinkPath, '-ssh', login, '-P', cfg.sshPort]
+        if cfg.debug > 3:
+            printf("Enabling SSH debug. You can review it in ssh.debug\n")
+            plinkCmd.append('-sshlog')
+            plinkCmd.append('ssh.debug')
+        plinkCmd.append("echo \"remoteShark::connectionTest::good\"")
         self.__plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
         if self.cfg.debug >= 3:
@@ -452,6 +473,8 @@ xargs printf "%10s | %24s\\n"
         """ Connect to the remote host and start local Wireshark for live capturing of traffic """
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
+
+        self.__startTime = time.time()
 
         tcpdumpCMD = ''
         if cfg.runTimeout != None and cfg.runTimeout > 0:
@@ -480,6 +503,11 @@ xargs printf "%10s | %24s\\n"
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
             plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
+            if cfg.debug > 3:
+                printf("Enabling SSH debug. You can review it in ssh.debug\n")
+                plinkCmd.append('-sshlog')
+                plinkCmd.append('ssh.debug')
+
             if cfg.compression == True:
                 plinkCmd.append('-C')
             plinkCmd.append(tcpdumpCMD)
@@ -516,10 +544,10 @@ xargs printf "%10s | %24s\\n"
                 # Leave wireshark process running
                 if self.cfg.debug >= 1:
                     printf("Reached timeout\n")
-                sys.exit(0)
+                self.__exit(0)
             except:
                 printf("Unknown issue\n")
-                sys.exit(1)
+                self.__exit(1)
         else:
             printf("Press Ctrl+C to terminate capture and exit\n")
             while True:
@@ -527,14 +555,19 @@ xargs printf "%10s | %24s\\n"
                     if p != None and p.poll() != None:
                         if self.cfg.debug > 3:
                             printf("Detected exit from SSH, exiting\n")
-                        sys.exit(0)
+                        self.__exit(0)
                 
                 if self.__wireProcess.poll() != None:
                     if self.cfg.debug > 3:
                         printf("Detected exit from Wireshark, exiting\n")
-                    sys.exit(0)
+                    self.__exit(0)
                 
                 time.sleep(1)
+
+    def __exit(self, exitCode = 0):
+        if self.cfg.debug > 1 and self.__startTime != None:
+            printf("Utility was running for %.6f seconds\n", time.time()-self.__startTime)
+        sys.exit(exitCode)
 
     def signalHandler(self, sig, frame):
         printf("Cleaning the child with sig %d\n", sig)
@@ -546,7 +579,7 @@ xargs printf "%10s | %24s\\n"
             printf("Stopping SSH\n")
             if self.__sshProcess.poll() == None:
                 os.kill(self.__sshProcess.pid, signal.SIGTERM)
-        sys.exit(0)
+        self.__exit(0)
 
     def setupSignals(self):
         for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGTERM):
