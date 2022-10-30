@@ -105,7 +105,12 @@ class AppConfig:
                 self.compression = True
                 i = i + 1
                 continue
-
+            
+            if argv[i] == '--no-compression':
+                self.compression = False
+                i = i + 1
+                continue
+            
             if argv[i] == '--timeout' or argv[i] == '-t':
                 if argc <= i + 1:
                     printf("%s requires an argument\n", argv[i])
@@ -265,6 +270,7 @@ class RemoteShark:
         helpData = """Usage: remoteShark.py [OPTIONS] host
  -c  --count             Stop capture after receiving count packets
  -C  --compression       Enables compression
+     --no-compression    Disables compression
  -d  --debug             Enables debug mode
  -f  --filter            Filters which packets will be captured. For filter
                          syntax see pcap-filter(7) man page on a Linux system.
