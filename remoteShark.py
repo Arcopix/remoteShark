@@ -20,7 +20,7 @@ import sys
 import os
 import os.path
 import re
-import inspect
+from inspect import getmembers, ismethod
 from ipaddress import ip_address
 import time
 import subprocess
@@ -219,9 +219,9 @@ class AppConfig:
     def __str__(self):
         """ Convert the configuration to string for debug purposes """
         data = ""
-        for x in inspect.getmembers(self):
+        for x in getmembers(self):
             if not x[0].startswith('_'):
-                if not inspect.ismethod(x[1]):
+                if not ismethod(x[1]):
                     data = data + sprintf("%s=%s\n", x[0], x[1])
         return data
 
