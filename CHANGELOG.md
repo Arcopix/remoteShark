@@ -6,6 +6,7 @@
 * Validation methods of AppConfig are now private
 * Implemented --port|-p argument which specifies the SSH port
 * Implemented compression on SSH level (enabled by -c|--compression)
+* Fixed support for ampersand symbol for packet capture filter 
 
 ## Alpha 3
 
