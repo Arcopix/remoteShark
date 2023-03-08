@@ -27,7 +27,7 @@ date=(0, 0)
   kids=[
 StringFileInfo(
   [
-  StringTable(
+  StringTable( # noqa
     u'040904B0',
     [StringStruct(u'CompanyName', u'Devhex Ltd'), # noqa
     StringStruct(u'FileDescription', u'remoteShark utility'), # noqa
