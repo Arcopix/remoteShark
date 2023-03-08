@@ -193,6 +193,7 @@ class AppConfig:
 
     def __escapeFilter(self):
         """ Escapes several special symbols in the PCAP filter """
+        self.dumpFilter = re.sub('&', '\&', self.dumpFilter)
         self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
         self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
         return
