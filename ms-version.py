@@ -2,11 +2,11 @@
 #
 # For more details about fixed file info 'ffi' see:
 # http://msdn.microsoft.com/en-us/library/ms646997.aspx
-VSVersionInfo(
-  ffi=FixedFileInfo(
+VSVersionInfo( # noqa
+  ffi=FixedFileInfo( # noqa
 # filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
 # Set not needed items to zero 0.
-filevers=(1, 0, 0, 0),
+filevers=(1, 0, 0, 0), 
 prodvers=(1, 0, 0, 0),
 # Contains a bitmask that specifies the valid bits 'flags'r
 mask=0x3f,
@@ -29,15 +29,15 @@ StringFileInfo(
   [
   StringTable(
     u'040904B0',
-    [StringStruct(u'CompanyName', u'Devhex Ltd'),
-    StringStruct(u'FileDescription', u'remoteShark utility'),
-    StringStruct(u'FileVersion', u'1.0.0.0'),
-    StringStruct(u'InternalName', u'remoteShark'),
-    StringStruct(u'LegalCopyright', u'GPLv3'),
-    StringStruct(u'OriginalFilename', u'remoteShark.exe'),
-    StringStruct(u'ProductName', u'remoteShark'),
-    StringStruct(u'ProductVersion', u'1.0.0 (alpha4)')])
+    [StringStruct(u'CompanyName', u'Devhex Ltd'), # noqa
+    StringStruct(u'FileDescription', u'remoteShark utility'), # noqa
+    StringStruct(u'FileVersion', u'1.0.0.0'), # noqa
+    StringStruct(u'InternalName', u'remoteShark'), # noqa
+    StringStruct(u'LegalCopyright', u'GPLv3'), # noqa
+    StringStruct(u'OriginalFilename', u'remoteShark.exe'), # noqa
+    StringStruct(u'ProductName', u'remoteShark'), # noqa
+    StringStruct(u'ProductVersion', u'1.0.0 (alpha4)')]) # noqa
   ]),
-VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+VarFileInfo([VarStruct(u'Translation', [1033, 1200])]) # noqa
   ]
 )
