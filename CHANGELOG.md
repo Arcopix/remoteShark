@@ -3,6 +3,8 @@
 ## Alpha 4
 * Host validation no longer accepts hosts starting with '-'
 * Implemented experimental support for reading pcap file on the remote system
+  * Also supports packet captures compressed with gz (if extension is .gz)
+  * Also supports packet captures compressed with gz (if extension is .bz2)
 * Validation methods of AppConfig are now private
 * Implemented --port|-p argument which specifies the SSH port
 * Implemented compression on SSH level (enabled by -c|--compression)

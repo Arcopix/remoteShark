@@ -508,7 +508,12 @@ xargs printf "%10s | %24s\\n"
         if cfg.remotePcapFile == None:
             tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
         else:
-            tcpdumpCMD = sprintf('%s -U -n -r %s -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.remotePcapFile, cfg.dumpFilter)
+            if (cfg.remotePcapFile.endswith('.gz')):
+                tcpdumpCMD = sprintf('zcat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
+            elif (cfg.remotePcapFile.endswith('.bz2')):
+                tcpdumpCMD = sprintf('bzcat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
+            else:
+                tcpdumpCMD = sprintf('cat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
