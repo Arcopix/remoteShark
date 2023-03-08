@@ -11,7 +11,7 @@ __author__ = "Stefan Lekov"
 __copyright__ = "Copyright 2022, Devhex Ltd"
 __credits__ = ["Stefan Lekov", "Theo Belder", "Atanas Angelov", "Linda Aleksandrova" ]
 __license__ = "GPLv3"
-__version__ = "1.0.0-alpha3"
+__version__ = "1.0.0-alpha4"
 __maintainer__ = "Stefan Lekov"
 __email__ = "stefan.lekov@devhex.org"
 __status__ = "Testing"
@@ -20,7 +20,7 @@ import sys
 import os
 import os.path
 import re
-import inspect
+from inspect import getmembers, ismethod
 from ipaddress import ip_address
 import time
 import subprocess
@@ -42,6 +42,8 @@ WIN_PLINK_PATH="\\PuTTY\\plink.exe"
 
 MAC_WIRESHARK_PATH="/Applications/Wireshark.app/Contents/MacOS/Wireshark"
 
+SSH_DEBUG_LOG='ssh.debug'
+
 class AppConfig:
     # Path of binaries
     wiresharkPath = None
@@ -52,8 +54,11 @@ class AppConfig:
     interface = 'any'
     sshUser = 'root'
     sshHost = None
+    sshPort = '22'
     dumpFilter = 'not port 22'
-
+    remotePcapFile = None
+    compression = None
+    
     debug = 0
 
     def __init__(self, argv):
@@ -97,7 +102,17 @@ class AppConfig:
                     sys.exit(2)
                 i = i + 2
                 continue
-
+            
+            if argv[i] == '--compression' or argv[i] == '-C':
+                self.compression = True
+                i = i + 1
+                continue
+            
+            if argv[i] == '--no-compression':
+                self.compression = False
+                i = i + 1
+                continue
+            
             if argv[i] == '--timeout' or argv[i] == '-t':
                 if argc <= i + 1:
                     printf("%s requires an argument\n", argv[i])
@@ -119,14 +134,31 @@ class AppConfig:
                     i = i + 2
                     continue
 
+            if argv[i] == '--port' or argv[i] == '-p':
+                if argc <= i + 1:
+                    printf("%s requires an argument\n", argv[i])
+                    sys.exit(1)
+                else:
+                    try:
+                        if self.dumpFilter == sprintf("not port %s", self.sshPort):
+                            self.dumpFilter = sprintf("not port %s", str(int(argv[i + 1])))
+                            if self.debug > 2:
+                                printf("Switching default pcap filter to %s", self.dumpFilter)
+                        self.sshPort = str(int(argv[i + 1]))
+                    except ValueError:
+                        printf("%s requires an integer argument\n", argv[i])
+                        sys.exit(2)
+                    i = i + 2
+                    continue
+
             if argv[i] == '--filter' or argv[i] == '-f':
                 if argc <= i + 1:
                     printf("%s requires an argument\n", argv[i])
                     sys.exit(1)
                 else:
                     self.dumpFilter = argv[i + 1]
-                    self.validateFilter()
-                    self.escapeFilter()
+                    self.__validateFilter()
+                    self.__escapeFilter()
                     i = i + 2
                     continue
 
@@ -136,21 +168,22 @@ class AppConfig:
                     sys.exit(1)
                 else:
                     self.interface = argv[i + 1]
-                    self.validateIface()
+                    self.__validateIface()
                     i = i + 2
                     continue
 
             # Consume the first non-recognized argument as the host
-            if self.sshHost == None:
+            if self.sshHost == None and argv[i][0] != '-':
                 self.sshHost = argv[i]
-                self.validateHost()
+                self.__validateHost()
                 i = i + 1
                 continue
 
             printf("Unrecognized parameter %s\n", argv[i])
             i = i + 1
+        self.__postCfgPostprocess()
 
-    def validateFilter(self):
+    def __validateFilter(self):
         """ Validates the PCAP filter in order to ensure that some special symbols are not used """
         test = re.search('[\\\\;"`-]', self.dumpFilter)
         if test != None:
@@ -158,13 +191,14 @@ class AppConfig:
             sys.exit(1)
         return
 
-    def escapeFilter(self):
+    def __escapeFilter(self):
         """ Escapes several special symbols in the PCAP filter """
+        self.dumpFilter = re.sub('&', '\&', self.dumpFilter)
         self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
         self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
         return
 
-    def validateIface(self):
+    def __validateIface(self):
         """ Validates interface name """
         test = re.search('[ \t"/$`]', self.interface)
         if test != None:
@@ -176,8 +210,12 @@ class AppConfig:
         print(self.interface)
         return
 
-    def validateHost(self):
+    def __validateHost(self):
         """ Validates specified host """
+        if re.search(':', self.sshHost):
+            buf = self.sshHost.split(':', 1)
+            self.sshHost = buf[0]
+            self.remotePcapFile = buf[1]
         try:
             ip_address(self.sshHost)
             if self.debug > 2:
@@ -192,13 +230,24 @@ class AppConfig:
                 printf("Cannot resolve host %s\n", self.sshHost)
                 sys.exit(1)
             return
+    
+    def __postCfgPostprocess(self):
+        """ Runs several post-processing checks on the configuration """
+        if self.remotePcapFile != None and self.runTimeout != None:
+            if self.debug > 0:
+                printf("Loading remote packet capture file in conjunction with -t|--timeout does not limit the data to timeout but limits time to load the data\n")
+        if self.remotePcapFile != None and self.compression == None:
+            if self.debug > 0:
+                printf("Detected remote file instead of a live capture. Enabling --compression by default. You can disable this behavior by --no-compression\n")
+            self.compression = True
+        return
 
     def __str__(self):
         """ Convert the configuration to string for debug purposes """
         data = ""
-        for x in inspect.getmembers(self):
+        for x in getmembers(self):
             if not x[0].startswith('_'):
-                if not inspect.ismethod(x[1]):
+                if not ismethod(x[1]):
                     data = data + sprintf("%s=%s\n", x[0], x[1])
         return data
 
@@ -209,7 +258,9 @@ class RemoteShark:
     __sshProcess = None
     __plinkProcess = None
     __wireProcess = None
-    
+
+    __starTime = None
+
     def __init__(self):
         global cfg
 
@@ -223,6 +274,8 @@ class RemoteShark:
         """ Print usage information for the utility """
         helpData = """Usage: remoteShark.py [OPTIONS] host
  -c  --count             Stop capture after receiving count packets
+ -C  --compression       Enables compression
+     --no-compression    Disables compression
  -d  --debug             Enables debug mode
  -f  --filter            Filters which packets will be captured. For filter
                          syntax see pcap-filter(7) man page on a Linux system.
@@ -231,6 +284,7 @@ class RemoteShark:
      --list-interfaces   Connects to the remote host and lists interfaces
                          available for capturing traffic
  -i  --interface         Remote interface to listen on (default any)
+ -p  --port              SSH port to connect to
  -t  --timeout           Stop capture after timeout has expired
  -u  --user              SSH user to connect as (default root)
 
@@ -310,6 +364,29 @@ class RemoteShark:
             
         return WIRESHARK_FOUND and PLINK_FOUND
     
+    def __setupSSHdebug(self, cmd):
+        """ TBA """
+
+        # If debug is lower than 4, do not enable SSH debug
+        if self.cfg.debug < 4:
+            return
+        
+        printf("Enabling SSH debug. You can review it in ssh.debug\n")
+
+        if self.platform == 'Windows':
+            cmd.append('-sshlog')
+            plinkCmd.append(SSH_DEBUG_LOG)
+
+        if self.platform == 'Linux':
+            cmd.append('-vvv')
+            cmd.append('-E')
+            cmd.append(SSH_DEBUG_LOG)
+
+        if self.platform == 'Darwin':
+            printf("Do not know how to enable SSH debug in MacOS/Darwin\n")
+        
+        return
+
     def listInterfaces(self):
         """ Connect to remote host and list available interfaces on the remote system """
         global cfg
@@ -323,26 +400,18 @@ xargs printf "%10s | %24s\\n"
 """
         if self.platform == 'Windows':
             self.testConnection()
-            process = subprocess.Popen([cfg.plinkPath, '-batch', '-ssh', login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort, ]
+            self.__setupSSHdebug(plinkCmd)
+            plinkCmd.append(command)
         else: # Linux or Mac (Darwin)
-            process = subprocess.Popen([cfg.plinkPath, login, command], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            plinkCmd = [cfg.plinkPath, login, '-p', cfg.sshPort]
+            self.__setupSSHdebug(plinkCmd)
+            plinkCmd.append(command)
+
+        process = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         out, err = process.communicate()
         print(out.decode())
-    
-    def remotePCAP(self):
-        """ Proof of concept/development method for fetching remote packet capture instead of live capturing of traffic """
-        # No implementation at the moment
-        """ Some notes
-For Windows:
-    (successful proof of concept)
-        # plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "cat /tmp/p.pcap"]
-    (an idea) Wireshak generally understands GZIP data, might be an idea to reduce transfer times
-        # plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "cat /tmp/p.pcap | gzip"]
-        Added general ideas for accessing remote
-For Linux: (an idea)
-    linkCmd = ["scp USER@REMOTE:/tmp/p.pcap /tmp/XXX ; wireshak /tmp/xxx"]
-        """
 
     def testConnection(self):
         """ Tests connection to the remote host (for Windows) and adds the remote host SSH key if needed """
@@ -350,7 +419,9 @@ For Linux: (an idea)
         # %PLINK_PATH% -batch -ssh root@%REMOTE_HOST% "echo All good" 2>NUL | findstr "All good" >NUL
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
-        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+        plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
+        self.__setupSSHdebug(plinkCmd)
+        plinkCmd.append("echo \"remoteShark::connectionTest::good\"")
 
         if self.cfg.debug >= 3:
             printf('Running connection process "%s"\n', plinkCmd)
@@ -395,7 +466,10 @@ For Linux: (an idea)
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
-        plinkCmd = [cfg.plinkPath, '-ssh', login, "echo \"remoteShark::connectionTest::good\""]
+        plinkCmd = [cfg.plinkPath, '-ssh', login, '-P', cfg.sshPort]
+        self.__setupSSHdebug(plinkCmd)
+        plinkCmd.append("echo \"remoteShark::connectionTest::good\"")
+        
         self.__plinkProcess = subprocess.Popen(plinkCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
 
         if self.cfg.debug >= 3:
@@ -418,6 +492,8 @@ For Linux: (an idea)
         global cfg
         login = sprintf('%s@%s', cfg.sshUser, cfg.sshHost)
 
+        self.__startTime = time.time()
+
         tcpdumpCMD = ''
         if cfg.runTimeout != None and cfg.runTimeout > 0:
             # It usually takes about a second to establish the connection
@@ -429,7 +505,15 @@ For Linux: (an idea)
         if cfg.packetCount != None and cfg.packetCount > 0:
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
         # It is important to suppress STDERR, otherwise the data from tcpdump STDERR will break Wireshark
-        tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
+        if cfg.remotePcapFile == None:
+            tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
+        else:
+            if (cfg.remotePcapFile.endswith('.gz')):
+                tcpdumpCMD = sprintf('zcat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
+            elif (cfg.remotePcapFile.endswith('.bz2')):
+                tcpdumpCMD = sprintf('bzcat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
+            else:
+                tcpdumpCMD = sprintf('cat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
@@ -441,8 +525,12 @@ For Linux: (an idea)
 
         if self.platform == 'Windows':
             DETACHED_PROCESS = 0x00000008
-            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, tcpdumpCMD]
-
+            plinkCmd = [cfg.plinkPath, '-batch', '-ssh', login, '-P', cfg.sshPort]
+            self.__setupSSHdebug(plinkCmd)
+            if cfg.compression == True:
+                plinkCmd.append('-C')
+            plinkCmd.append(tcpdumpCMD)
+            
             self.testConnection()
 
             if self.cfg.debug >= 3:
@@ -455,7 +543,11 @@ For Linux: (an idea)
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=self.__plinkProcess.stdout,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         else: # Linux or Mac (Darwin)
-            sshCmd = [cfg.plinkPath, login, tcpdumpCMD]
+            sshCmd = [cfg.plinkPath, login, '-p', cfg.sshPort]
+            if cfg.compression == True:
+                sshCmd.append('-C')
+            self.__setupSSHdebug(sshCmd)
+            sshCmd.append(tcpdumpCMD)
 
             if self.cfg.debug >= 3:
                 printf('Running connection process "%s"\n', sshCmd)
@@ -472,10 +564,10 @@ For Linux: (an idea)
                 # Leave wireshark process running
                 if self.cfg.debug >= 1:
                     printf("Reached timeout\n")
-                sys.exit(0)
+                self.__exit(0)
             except:
                 printf("Unknown issue\n")
-                sys.exit(1)
+                self.__exit(1)
         else:
             printf("Press Ctrl+C to terminate capture and exit\n")
             while True:
@@ -483,14 +575,19 @@ For Linux: (an idea)
                     if p != None and p.poll() != None:
                         if self.cfg.debug > 3:
                             printf("Detected exit from SSH, exiting\n")
-                        sys.exit(0)
+                        self.__exit(0)
                 
                 if self.__wireProcess.poll() != None:
                     if self.cfg.debug > 3:
                         printf("Detected exit from Wireshark, exiting\n")
-                    sys.exit(0)
+                    self.__exit(0)
                 
                 time.sleep(1)
+
+    def __exit(self, exitCode = 0):
+        if self.cfg.debug > 1 and self.__startTime != None:
+            printf("Utility was running for %.6f seconds\n", time.time()-self.__startTime)
+        sys.exit(exitCode)
 
     def signalHandler(self, sig, frame):
         printf("Cleaning the child with sig %d\n", sig)
@@ -502,14 +599,13 @@ For Linux: (an idea)
             printf("Stopping SSH\n")
             if self.__sshProcess.poll() == None:
                 os.kill(self.__sshProcess.pid, signal.SIGTERM)
-        sys.exit(0)
+        self.__exit(0)
 
     def setupSignals(self):
         for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGTERM):
             if self.cfg.debug > 3:
                 printf("Setting the hook %s\n", signal.strsignal(sig))
             signal.signal(sig, self.signalHandler)
-
 
 if __name__ == '__main__':
     # Initialize configuration
