@@ -60,7 +60,7 @@ class AppConfig:
     compression = None
     
     debug = 0
-    fragmented = False
+    fragmentedFilter = False
 
     def __init__(self, argv):
         """ Construct the application's configuration """
@@ -164,7 +164,7 @@ class AppConfig:
                     continue
             
             if argv[i] == '--fragmented' or argv[i] == '-F':
-                self.fragmented = True
+                self.fragmentedFilter = True
                 i = i + 1
                 continue
 
@@ -246,7 +246,7 @@ class AppConfig:
             if self.debug > 0:
                 printf("Detected remote file instead of a live capture. Enabling --compression by default. You can disable this behavior by --no-compression\n")
             self.compression = True
-        if len(self.dumpFilter) > 0 and self.fragmented:
+        if len(self.dumpFilter) > 0 and self.fragmentedFilter:
             self.dumpFilter = sprintf('(%s) or ( ip[6:2] & 0x3fff != 0x0000 )', self.dumpFilter)
         
         return
@@ -521,11 +521,11 @@ xargs printf "%10s | %24s\\n"
             tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - "%s" 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
         else:
             if (cfg.remotePcapFile.endswith('.gz')):
-                tcpdumpCMD = sprintf('zcat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
+                tcpdumpCMD = sprintf('zcat %s | %s -U -n -r - -s 0 -q -w - "%s" 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
             elif (cfg.remotePcapFile.endswith('.bz2')):
-                tcpdumpCMD = sprintf('bzcat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
+                tcpdumpCMD = sprintf('bzcat %s | %s -U -n -r - -s 0 -q -w - "%s" 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
             else:
-                tcpdumpCMD = sprintf('cat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
+                tcpdumpCMD = sprintf('cat %s | %s -U -n -r - -s 0 -q -w - "%s" 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
 	
         if self.cfg.debug >= 3:
             printf('Running command remote "%s"\n', tcpdumpCMD)
