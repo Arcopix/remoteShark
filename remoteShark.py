@@ -436,7 +436,7 @@ xargs printf "%10s | %24s\\n"
                 printf('Successful connection to the remote host')
             return
 
-        if (re.search("The server's host key is not cached", err.decode())):
+        if (re.search("The server's host key is not cached", err.decode()) or re.search("The host key is not cached for this server", err.decode())):
             printf("%s\n", err.decode())
             printf("\n\nThis utility will automatically add the host key in 5 seconds.\n")
             printf("Press Ctrl+C to abort... \n")
