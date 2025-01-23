@@ -58,6 +58,7 @@ class AppConfig:
     dumpFilter = 'not port 22'
     remotePcapFile = None
     compression = None
+    wiresharkFilter = ''
     
     debug = 0
     fragmentedFilter = False
@@ -166,6 +167,15 @@ class AppConfig:
             if argv[i] == '--fragmented' or argv[i] == '-F':
                 self.fragmentedFilter = True
                 i = i + 1
+                continue
+
+            if argv[i] == '--wireshark-filter' or argv[i] == '-w':
+                if argc <= i + 1:
+                    printf("%s requires an argument\n", argv[i])
+                    sys.exit(1)
+                else:
+                    self.wiresharkFilter = argv[i+1]
+                i = i + 2
                 continue
 
             if argv[i] == '--interface' or argv[i] == '-i':
@@ -531,7 +541,10 @@ xargs printf "%10s | %24s\\n"
             printf('Running command remote "%s"\n', tcpdumpCMD)
 
         # Wireshark is run with the same arguments for all OS
-        wireCmd = [cfg.wiresharkPath, '-k', '-i', '-']
+        if len(self.cfg.wiresharkFilter) > 0:
+            wireCmd = [cfg.wiresharkPath, '-k', '-i', '-', '-Y', self.cfg.wiresharkFilter]
+        else:
+            wireCmd = [cfg.wiresharkPath, '-k', '-i', '-']
 
         self.setupSignals()
 
