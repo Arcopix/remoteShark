@@ -60,6 +60,7 @@ class AppConfig:
     compression = None
     
     debug = 0
+    fragmented = False
 
     def __init__(self, argv):
         """ Construct the application's configuration """
@@ -161,6 +162,11 @@ class AppConfig:
                     self.__escapeFilter()
                     i = i + 2
                     continue
+            
+            if argv[i] == '--fragmented' or argv[i] == '-F':
+                self.fragmented = True
+                i = i + 1
+                continue
 
             if argv[i] == '--interface' or argv[i] == '-i':
                 if argc <= i + 1:
@@ -240,6 +246,9 @@ class AppConfig:
             if self.debug > 0:
                 printf("Detected remote file instead of a live capture. Enabling --compression by default. You can disable this behavior by --no-compression\n")
             self.compression = True
+        if len(self.dumpFilter) > 0 and self.fragmented:
+            self.dumpFilter = sprintf('(%s) or ( ip[6:2] & 0x3fff != 0x0000 )', self.dumpFilter)
+        
         return
 
     def __str__(self):
@@ -280,6 +289,9 @@ class RemoteShark:
  -f  --filter            Filters which packets will be captured. For filter
                          syntax see pcap-filter(7) man page on a Linux system.
                          Default filter is "not port 22".
+ -F  --fragmented        Augments the filter from the original "__FILTER__" to
+                         "(__FILTER__) or ( ip[6:2] & 0x3fff != 0x0000 )" in
+                         order to enforce capturing of fragmented UDP packets
  -h  --help              Prints the current help message
      --list-interfaces   Connects to the remote host and lists interfaces
                          available for capturing traffic
@@ -506,7 +518,7 @@ xargs printf "%10s | %24s\\n"
             tcpdumpCMD = sprintf("%s -c %d", tcpdumpCMD, cfg.packetCount)
         # It is important to suppress STDERR, otherwise the data from tcpdump STDERR will break Wireshark
         if cfg.remotePcapFile == None:
-            tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - %s 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
+            tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - "%s" 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
         else:
             if (cfg.remotePcapFile.endswith('.gz')):
                 tcpdumpCMD = sprintf('zcat %s | %s -U -n -r - -s 0 -q -w - %s 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
