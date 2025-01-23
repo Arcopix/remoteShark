@@ -509,7 +509,14 @@ xargs printf "%10s | %24s\\n"
             return True
         else:
             return False
-
+    
+    def validateRemotePcapFile(self):
+        """ Connects to the remote host and validates the if the remote file exists and if it correct type """
+        if self.cfg.debug >= 2:
+            printf("Validating if '%s' exist and is supported\n", cfg.remotePcapFile)
+        # TODO - actual implementation
+        return True
+    
     def runWireshark(self):
         """ Connect to the remote host and start local Wireshark for live capturing of traffic """
         global cfg
@@ -531,6 +538,9 @@ xargs printf "%10s | %24s\\n"
         if cfg.remotePcapFile == None:
             tcpdumpCMD = sprintf('%s -U -ni "%s" -s 0 -q -w - "%s" 2>/dev/null', tcpdumpCMD, cfg.interface, cfg.dumpFilter)
         else:
+            if not self.validateRemotePcapFile():
+                printf("Invalid file or file format of remote pcap file\n")
+                self.__exit(1)
             if (cfg.remotePcapFile.endswith('.gz')):
                 tcpdumpCMD = sprintf('zcat %s | %s -U -n -r - -s 0 -q -w - "%s" 2>/dev/null', cfg.remotePcapFile, tcpdumpCMD, cfg.dumpFilter)
             elif (cfg.remotePcapFile.endswith('.bz2')):
