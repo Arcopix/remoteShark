@@ -2,7 +2,6 @@
 
 1. Fully test (and bugfix) for Mac
 1. Split remoteShark.py into a library and have basic scripts which execute the behavior _(?)_
-1. Support for display filter in local Wireshark
 1. Update project dir tree (remove win/linux dirs, move sources to src)
 2. Build system for compiling via pyinstaller
 
@@ -20,3 +19,4 @@
 10. Work with remote pcap files
 11. Support for non-standard SSH port
 12. Implement compression of the data stream
+13. Support for display filter in local Wireshark
