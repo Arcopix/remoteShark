@@ -8,7 +8,7 @@
   all Unix/Linux systems.
 """
 __author__ = "Stefan Lekov"
-__copyright__ = "Copyright 2022, Devhex Ltd"
+__copyright__ = "Copyright 2022-2025, Devhex Ltd"
 __credits__ = ["Stefan Lekov", "Theo Belder", "Atanas Angelov", "Linda Aleksandrova" ]
 __license__ = "GPLv3"
 __version__ = "1.0.0-alpha4"
