@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Beta 1 _(not released yet)_
+* Built-in tcpdump filter helper for fragmented IP packets
+* Support for Wireshark display filter
+* Fixed issue with "non cached host key"
+
 ## Alpha 4
 * Host validation no longer accepts hosts starting with '-'
 * Implemented experimental support for reading pcap file on the remote system
