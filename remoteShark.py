@@ -309,6 +309,7 @@ class RemoteShark:
  -p  --port              SSH port to connect to
  -t  --timeout           Stop capture after timeout has expired
  -u  --user              SSH user to connect as (default root)
+ -w  --wireshark-filter  Configures Wireshark's display filter
 
     """
         printf("%s\n", helpData)
