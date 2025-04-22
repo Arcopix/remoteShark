@@ -203,15 +203,15 @@ class AppConfig:
         """ Validates the PCAP filter in order to ensure that some special symbols are not used """
         test = re.search('[\\\\;"`-]', self.dumpFilter)
         if test != None:
-            printf("PCAP filter cannot have semicolon (;), backslash (\), dash (-), dollar sign ($), backtick (`) or double quotes (\")\n")
+            printf("PCAP filter cannot have semicolon (;), backslash (\\), dash (-), dollar sign ($), backtick (`) or double quotes (\")\n")
             sys.exit(1)
         return
 
     def __escapeFilter(self):
         """ Escapes several special symbols in the PCAP filter """
-        self.dumpFilter = re.sub('&', '\&', self.dumpFilter)
-        self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
-        self.dumpFilter = re.sub('\)', '\)', self.dumpFilter)
+        #self.dumpFilter = re.sub('&', '\&', self.dumpFilter)
+        #self.dumpFilter = re.sub('\(', '\(', self.dumpFilter)
+        #self.dumpFilter = re.sub('\\)', '\)', self.dumpFilter)
         return
 
     def __validateIface(self):
