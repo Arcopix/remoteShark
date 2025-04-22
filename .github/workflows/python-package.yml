@@ -6,9 +6,13 @@ name: Python package
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:               # prevents workflow execution when only these types of files are modified
+      - 'ms-version.py'         # adds ignore for ms-version.py      
   pull_request:
     branches: [ "main" ]
-
+    paths-ignore:               # prevents workflow execution when only these types of files are modified
+      - 'ms-version.py'         # adds ignore for ms-version.py      
+    
 jobs:
   build:
 
